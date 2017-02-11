@@ -1,0 +1,11 @@
+[package]
+name = "mleap-tensor"
+version = "0.1.0"
+authors = ["Hollin Wilkins <hollinrwilkins@gmail.com>"]
+
+[dependencies]
+clippy = {version = "*", optional = true}
+num = "0.1"
+
+[features]
+default = []
