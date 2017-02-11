@@ -11,7 +11,7 @@ pub struct DenseTensor<T> {
 
 /// `SparseTensor`
 ///
-/// Refer to: `http://ieee-hpec.org/2012/index_htm_files/Baskaranpaper.pdf for storage format choice`
+/// Refer to: `http://ieee-hpec.org/2012/index_htm_files/Baskaranpaper.pdf` for storage format choice
 #[derive(Debug, Clone)]
 pub struct SparseTensor<T> {
   dims: Vec<usize>,
@@ -92,6 +92,16 @@ impl<T> Ravel for DenseTensor<T> {
 }
 
 impl<T> GetScalar<T> for DenseTensor<T> {
+  /// Gets a scalar value at a given index
+  ///
+  ///
+  /// ```
+  /// use mleap_tensor::{DenseTensor, GetScalar};
+  ///
+  /// let tensor = DenseTensor::new(vec![2, 3, 2], vec![45, 67, 89, 23, 43, 66,  98, 34, 23, 23, 44, 54, 76]);
+  /// assert_eq!(*tensor.get_scalar(&vec![0, 1, 1]).unwrap(), 23);
+  /// assert_eq!(tensor.get_scalar(&vec![0, 23, 4]), None);
+  /// ```
   fn get_scalar(&self, index: &[usize]) -> Option<&T> {
     self.ravel_index(index).map(|index| &self.values[index])
   }
