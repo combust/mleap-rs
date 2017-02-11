@@ -7,4 +7,4 @@ extern crate num;
 pub mod tensor;
 pub mod math;
 
-pub use tensor::{DenseTensor, SparseTensor, Ravel, GetScalar};
+pub use tensor::*;
