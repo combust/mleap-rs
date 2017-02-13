@@ -7,5 +7,10 @@ authors = ["Hollin Wilkins <hollinrwilkins@gmail.com>"]
 clippy = {version = "*", optional = true}
 num = "0.1"
 
+[dependencies.blas-sys]
+version = "0.6.6"
+default-features = false
+features = ["accelerate"]
+
 [features]
 default = []
