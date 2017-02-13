@@ -1,5 +1,6 @@
 use std::ops::{Index, Range};
 use std::slice::Iter;
+use std::iter::Iterator;
 use std::cmp::PartialEq;
 use std::convert::From;
 
@@ -29,6 +30,13 @@ impl Dimensions {
 
   pub fn iter(&self) -> Iter<usize> {
     self.0.iter()
+  }
+
+  pub fn stride_iter<'a>(&'a self) -> StrideIter<'a> {
+    StrideIter {
+      dimensions: self,
+      index: 0
+    }
   }
 
   /// If a two `Dimensions` can broadcast to each other
@@ -74,5 +82,25 @@ impl From<Vec<usize>> for Dimensions {
 impl PartialEq for Dimensions {
   fn eq(&self, other: &Dimensions) -> bool {
     self.0 == other.0
+  }
+}
+
+pub struct StrideIter<'a> {
+  dimensions: &'a Dimensions,
+  index: usize
+}
+
+impl<'a> Iterator for StrideIter<'a> {
+  type Item = usize;
+
+  fn next(&mut self) -> Option<usize> {
+    let len = self.dimensions.len();
+    self.index += 1;
+
+    if self.index < len {
+      Some(self.dimensions[self.index..len].iter().product())
+    } else if self.index == len {
+      Some(1)
+    } else { None }
   }
 }
