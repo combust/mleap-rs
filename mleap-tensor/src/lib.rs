@@ -3,6 +3,7 @@
 
 extern crate num;
 
+pub mod broadcast;
 pub mod tensor;
 pub mod math;
 
