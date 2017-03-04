@@ -72,12 +72,9 @@ impl<T> Dense<T> {
   /// assert!(i2.next().is_none());
   /// assert!(i2.next().is_none());
   /// ```
-  pub fn dense_broadcast_iter<'a>(&'a self, other: &Tensor<T>, drop: usize) -> Option<DenseBroadcastIter<'a, T>> {
-    self.shape.dense_broadcast_dimensions(other.shape()).map(|dims| {
-      let short_dims: Vec<broadcast::Dimension> = dims.iter().take(dims.len() - drop).map(|x| *x).collect();
-      DenseBroadcastIter::new(&self.buffer, short_dims)
-    })
-  }
+  //pub fn dense_broadcast_iter<'a>(&'a self, bdims: Vec<broadcast::Dimension>) -> DenseBroadcastIter<'a, T> {
+    //DenseBroadcastIter::new(&self.buffer, bdims)
+  //}
 
   /// Ravels the index into the 1-D vector
   ///

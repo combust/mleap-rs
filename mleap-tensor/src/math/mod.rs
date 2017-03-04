@@ -1,9 +1,16 @@
-//mod dot;
+use std::marker::PhantomData;
 
-//pub use self::dot::*;
+mod builder;
 
-//#[derive(Debug, Clone, Copy)]
-//pub enum Error {
-  //Broadcast,
-  //UnsupportedTensor
-//}
+pub use self::builder::*;
+
+#[derive(Debug, Clone, Copy)]
+pub enum Error {
+  Broadcast
+}
+
+pub struct Blas<T> {
+  _phantom: PhantomData<T>
+}
+
+const BlasF32: Blas<f32> = Blas { _phantom: PhantomData { } };
