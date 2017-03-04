@@ -1,16 +1,16 @@
-use std::marker::PhantomData;
+//use std::marker::PhantomData;
 
-mod builder;
+//mod builder;
 
-pub use self::builder::*;
+//pub use self::builder::*;
 
-#[derive(Debug, Clone, Copy)]
-pub enum Error {
-  Broadcast
-}
+//#[derive(Debug, Clone, Copy)]
+//pub enum Error {
+  //Broadcast
+//}
 
-pub struct Blas<T> {
-  _phantom: PhantomData<T>
-}
+//pub struct Blas<T> {
+  //_phantom: PhantomData<T>
+//}
 
-const BlasF32: Blas<f32> = Blas { _phantom: PhantomData { } };
+//const BlasF32: Blas<f32> = Blas { _phantom: PhantomData { } };

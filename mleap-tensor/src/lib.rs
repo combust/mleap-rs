@@ -4,9 +4,6 @@
 extern crate num;
 extern crate blas_sys;
 
-pub mod broadcast;
-pub mod tensor;
-pub mod math;
+pub mod core;
 
-pub use tensor::*;
-pub use math::*;
+pub use core::*;
