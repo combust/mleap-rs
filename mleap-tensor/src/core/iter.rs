@@ -1,5 +1,15 @@
 use dim::BroadcastDimension;
 
+pub trait TensorIterator<'a, T: 'a> {
+  fn bshape(&self) -> &'a [usize];
+  fn iter(&mut self) -> &mut Iterator<Item=T>;
+}
+
+pub struct TensorIter<'a, T: 'a, I: Iterator<Item=T>> {
+  bshape: &'a [usize],
+  it: I
+}
+
 pub struct DenseIter<'a, T: 'a> {
   dim: BroadcastDimension,
   index: usize,
@@ -11,7 +21,29 @@ pub struct DenseBroadcastIter<'a, T: 'a> {
   iterators: Vec<DenseIter<'a, T>>
 }
 
-impl <'a, T: 'a> DenseIter<'a, T> {
+impl<'a, T: 'a> Iterator for TensorIterator<'a, T> {
+  type Item = T;
+
+  fn next(&mut self) -> Option<T> {
+    self.iter().next()
+  }
+}
+
+impl<'a, T: 'a, I: Iterator<Item=T>> TensorIterator<'a, T> for TensorIter<'a, T, I> {
+  fn bshape(&self) -> &'a [usize] { self.bshape }
+  fn iter(&mut self) -> &mut Iterator<Item=T> { &mut self.it }
+}
+
+impl<'a, T: 'a, I: Iterator<Item=T>> TensorIter<'a, T, I> {
+  pub fn new(bshape: &'a [usize], it: I) -> TensorIter<'a, T, I> {
+    TensorIter {
+      bshape: bshape,
+      it: it
+    }
+  }
+}
+
+impl<'a, T: 'a> DenseIter<'a, T> {
   fn new(dim: BroadcastDimension,
          buf: &'a [T]) -> DenseIter<'a, T> {
     DenseIter {
@@ -39,6 +71,8 @@ impl<'a, T: 'a> Iterator for DenseIter<'a, T> {
 }
 
 // TODO: OPTIMIZATION: coalesce matching sequences of density into a chunks iterator
+// if target shape is [3, 5, 6, 1, 1, 4, 5, 7, 1] and actual is [3, 5, 6, 1, 1, 4, 1, 7, 1]
+// then iterators can look like this [Chunks(3, 5, 6, 1, 1, 4), DenseIter(5), Chunks(7, 1)]
 impl<'a, T: 'a> DenseBroadcastIter<'a, T> {
   pub fn new(bshape: & [BroadcastDimension],
              buf: &'a [T]) -> DenseBroadcastIter<'a, T> {
