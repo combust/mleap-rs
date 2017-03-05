@@ -1,12 +1,12 @@
+use std::rc::Rc;
 use dim::BroadcastDimension;
 
-pub trait TensorIterator<'a, T: 'a> {
-  fn bshape(&self) -> &'a [usize];
-  fn iter(&mut self) -> &mut Iterator<Item=T>;
+pub trait TensorIterator: Iterator {
+  fn bshape(&self) -> &[usize];
 }
 
-pub struct TensorIter<'a, T: 'a, I: Iterator<Item=T>> {
-  bshape: &'a [usize],
+pub struct TensorIter<I: Iterator> {
+  bshape: Rc<Vec<usize>>,
   it: I
 }
 
@@ -21,23 +21,24 @@ pub struct DenseBroadcastIter<'a, T: 'a> {
   iterators: Vec<DenseIter<'a, T>>
 }
 
-impl<'a, T: 'a> Iterator for TensorIterator<'a, T> {
+impl<T, I: Iterator<Item=T>> Iterator for TensorIter<I> {
   type Item = T;
 
   fn next(&mut self) -> Option<T> {
-    self.iter().next()
+    self.it.next()
   }
+
+  fn size_hint(&self) -> (usize, Option<usize>) { self.it.size_hint() }
 }
 
-impl<'a, T: 'a, I: Iterator<Item=T>> TensorIterator<'a, T> for TensorIter<'a, T, I> {
-  fn bshape(&self) -> &'a [usize] { self.bshape }
-  fn iter(&mut self) -> &mut Iterator<Item=T> { &mut self.it }
+impl<T, I: Iterator<Item=T>> TensorIterator for TensorIter<I> {
+  fn bshape(&self) -> &[usize] { &self.bshape }
 }
 
-impl<'a, T: 'a, I: Iterator<Item=T>> TensorIter<'a, T, I> {
-  pub fn new(bshape: &'a [usize], it: I) -> TensorIter<'a, T, I> {
+impl<T, I: Iterator<Item=T>> TensorIter<I> {
+  pub fn new(bshape: &Rc<Vec<usize>>, it: I) -> TensorIter<I> {
     TensorIter {
-      bshape: bshape,
+      bshape: bshape.clone(),
       it: it
     }
   }
@@ -74,7 +75,7 @@ impl<'a, T: 'a> Iterator for DenseIter<'a, T> {
 // if target shape is [3, 5, 6, 1, 1, 4, 5, 7, 1] and actual is [3, 5, 6, 1, 1, 4, 1, 7, 1]
 // then iterators can look like this [Chunks(3, 5, 6, 1, 1, 4), DenseIter(5), Chunks(7, 1)]
 impl<'a, T: 'a> DenseBroadcastIter<'a, T> {
-  pub fn new(bshape: & [BroadcastDimension],
+  pub fn new(bshape: &[BroadcastDimension],
              buf: &'a [T]) -> DenseBroadcastIter<'a, T> {
     let mut bufs: Vec<Option<&'a [T]>> = Vec::with_capacity(bshape.len());
     let mut iterators: Vec<DenseIter<'a, T>> = Vec::with_capacity(bshape.len());
