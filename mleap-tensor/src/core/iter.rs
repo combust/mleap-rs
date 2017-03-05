@@ -1,47 +1,14 @@
-use std::rc::Rc;
 use dim::BroadcastDimension;
-
-pub trait TensorIterator: Iterator {
-  fn bshape(&self) -> &[usize];
-}
-
-pub struct TensorIter<I: Iterator> {
-  bshape: Rc<Vec<usize>>,
-  it: I
-}
-
-pub struct DenseIter<'a, T: 'a> {
-  dim: BroadcastDimension,
-  index: usize,
-  buf: &'a [T]
-}
 
 pub struct DenseBroadcastIter<'a, T: 'a> {
   bufs: Vec<Option<&'a [T]>>,
   iterators: Vec<DenseIter<'a, T>>
 }
 
-impl<T, I: Iterator<Item=T>> Iterator for TensorIter<I> {
-  type Item = T;
-
-  fn next(&mut self) -> Option<T> {
-    self.it.next()
-  }
-
-  fn size_hint(&self) -> (usize, Option<usize>) { self.it.size_hint() }
-}
-
-impl<T, I: Iterator<Item=T>> TensorIterator for TensorIter<I> {
-  fn bshape(&self) -> &[usize] { &self.bshape }
-}
-
-impl<T, I: Iterator<Item=T>> TensorIter<I> {
-  pub fn new(bshape: &Rc<Vec<usize>>, it: I) -> TensorIter<I> {
-    TensorIter {
-      bshape: bshape.clone(),
-      it: it
-    }
-  }
+pub struct DenseIter<'a, T: 'a> {
+  dim: BroadcastDimension,
+  index: usize,
+  buf: &'a [T]
 }
 
 impl<'a, T: 'a> DenseIter<'a, T> {
@@ -75,12 +42,12 @@ impl<'a, T: 'a> Iterator for DenseIter<'a, T> {
 // if target shape is [3, 5, 6, 1, 1, 4, 5, 7, 1] and actual is [3, 5, 6, 1, 1, 4, 1, 7, 1]
 // then iterators can look like this [Chunks(3, 5, 6, 1, 1, 4), DenseIter(5), Chunks(7, 1)]
 impl<'a, T: 'a> DenseBroadcastIter<'a, T> {
-  pub fn new(bshape: &[BroadcastDimension],
+  pub fn new(bdims: &[BroadcastDimension],
              buf: &'a [T]) -> DenseBroadcastIter<'a, T> {
-    let mut bufs: Vec<Option<&'a [T]>> = Vec::with_capacity(bshape.len());
-    let mut iterators: Vec<DenseIter<'a, T>> = Vec::with_capacity(bshape.len());
+    let mut bufs: Vec<Option<&'a [T]>> = Vec::with_capacity(bdims.len());
+    let mut iterators: Vec<DenseIter<'a, T>> = Vec::with_capacity(bdims.len());
 
-    bshape.iter().fold(Some(buf), |opt_pb, &bdim| {
+    bdims.iter().fold(Some(buf), |opt_pb, &bdim| {
       opt_pb.and_then(|pb| {
         let mut iterator = DenseIter::new(bdim, pb);
         let buf = iterator.next();
