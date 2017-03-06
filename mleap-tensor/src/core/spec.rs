@@ -143,7 +143,6 @@ impl<'a, T: 'a> Spec<'a> for DenseBroadcast<'a, T> {
   fn shape(&self) -> &[usize] { &self.bshape }
 
   fn iter(&'a self) -> DenseBroadcastIter<'a, T> {
-    //let fshape: Vec<usize> = self.bshape.iter().chain(self.tshape.iter()).map(|x| *x).collect();
     let bdims = broadcast::broadcast_dims(&self.bshape, &self.shape);
 
     DenseBroadcastIter::new(bdims, self.buf)

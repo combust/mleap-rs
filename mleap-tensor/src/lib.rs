@@ -5,5 +5,7 @@ extern crate num;
 extern crate blas_sys;
 
 pub mod core;
+pub mod tensor;
 
 pub use core::*;
+pub use tensor::*;
