@@ -41,29 +41,11 @@ pub fn compatible<'a>(shape1: &'a [usize],
   })
 }
 
-pub fn broadcast_shape<'a>(bshape: &'a [usize],
-                           shape: &'a [usize]) -> Vec<BroadcastDimension> {
-  let slen = shape.len();
-  let tlen = bshape.len();
+pub fn broadcast_dims<'a>(bshape: &'a [usize],
+                          shape: &'a [usize]) -> Vec<BroadcastDimension> {
   let mut strides = DenseStrideIter::new(shape);
 
-  match slen.cmp(&tlen) {
-    Ordering::Equal => {
-      BroadcastDimension::shape_from_iters(&mut shape.iter(), &mut bshape.iter(), &mut strides)
-    },
-    Ordering::Less => {
-      let one: usize = 1;
-      let big_stride = shape.iter().product();
-
-      let mut strides2 = repeat(big_stride).take(tlen - slen).
-        chain(&mut strides);
-      let mut siter = repeat(&one).take(tlen - slen).
-        chain(shape.iter());
-
-      BroadcastDimension::shape_from_iters(&mut siter, &mut bshape.iter(), &mut strides2)
-    },
-    Ordering::Greater => panic!("shape cannot be larger than broadcast shape!")
-  }
+  BroadcastDimension::shape_from_iters(&mut shape.iter(), &mut bshape.iter(), &mut strides)
 }
 
 pub fn target_shape<'a>(shape1: &'a [usize],

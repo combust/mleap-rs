@@ -42,7 +42,7 @@ impl<'a, T: 'a> Iterator for DenseIter<'a, T> {
 // if target shape is [3, 5, 6, 1, 1, 4, 5, 7, 1] and actual is [3, 5, 6, 1, 1, 4, 1, 7, 1]
 // then iterators can look like this [Chunks(3, 5, 6, 1, 1, 4), DenseIter(5), Chunks(7, 1)]
 impl<'a, T: 'a> DenseBroadcastIter<'a, T> {
-  pub fn new(bdims: &[BroadcastDimension],
+  pub fn new(bdims: Vec<BroadcastDimension>,
              buf: &'a [T]) -> DenseBroadcastIter<'a, T> {
     let mut bufs: Vec<Option<&'a [T]>> = Vec::with_capacity(bdims.len());
     let mut iterators: Vec<DenseIter<'a, T>> = Vec::with_capacity(bdims.len());
