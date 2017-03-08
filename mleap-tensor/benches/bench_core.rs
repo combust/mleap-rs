@@ -28,26 +28,51 @@ pub fn dot_f32(a: &[f32], b: &[f32]) -> f32 {
 mod bench_core {
   use super::*;
   use test::Bencher;
+  use mleap_tensor::core::spec::*;
   use mleap_tensor::core::broadcast;
+  use mleap_tensor::op::dot::*;
+  use mleap_tensor::core::build::*;
 
   #[bench]
-  fn bench_dot_mleap(b: &mut Bencher) {
+  fn bench_dot_mleap_broadcast(b: &mut Bencher) {
     let shape1: Vec<usize> = vec![100, 100, 1000];
     let shape2: Vec<usize> = vec![100, 1, 1000];
+    let bshape: Vec<usize> = broadcast::target_shape(&shape1, &shape2);
 
     let buf1: Vec<f32> = rand_vec_f32(100 * 100 * 1000);
     let buf2: Vec<f32> = rand_vec_f32(100 * 1 * 1000);
 
-    let mut br = broadcast::dense_broadcast(&shape1, &buf1, &shape2, &buf2).unwrap();
-    br.chop(1);
-    br.bshape_push(1);
-    assert_eq!(br.iter().size_hint(), (100 * 100, Some(100 * 100)));
+    let mut spec1 = DenseBroadcast::new(bshape.clone(), shape1, &buf1);
+    let mut spec2 = DenseBroadcast::new(bshape.clone(), shape2, &buf2);
+
+    spec1.pop_to_tshape();
+    spec2.pop_to_tshape();
+
+    let dot = spec1.zip(spec2).map(Vec::new(), |(a, b)| a.dot(b));
 
     b.iter(|| {
-      let out = br.iter().map(|(a, b)| dot_f32(a, b)).collect::<Vec<f32>>();
-      assert_eq!(out[0], dot_f32(&buf1[0..1000], &buf2[0..1000]));
-      assert_eq!(out[1], dot_f32(&buf1[1000..2000], &buf2[0..1000]));
-      assert_eq!(out.len(), 100 * 100)
+      dot.build_dense_scalar();
+    });
+  }
+
+  #[bench]
+  fn bench_dot_mleap(b: &mut Bencher) {
+    let shape1: Vec<usize> = vec![100, 100, 1000];
+    let shape2: Vec<usize> = vec![100, 100, 1000];
+
+    let buf1: Vec<f32> = rand_vec_f32(100 * 100 * 1000);
+    let buf2: Vec<f32> = rand_vec_f32(100 * 100 * 1000);
+
+    let mut spec1 = Dense::new(shape1, &buf1);
+    let mut spec2 = Dense::new(shape2, &buf2);
+
+    spec1.pop_to_tshape();
+    spec2.pop_to_tshape();
+
+    let dot = spec1.zip(spec2).map(Vec::new(), |(a, b)| a.dot(b));
+
+    b.iter(|| {
+      dot.build_dense_scalar();
     });
   }
 
