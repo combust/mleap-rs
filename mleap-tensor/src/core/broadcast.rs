@@ -1,5 +1,4 @@
-use std::ops::Range;
-use std::iter::{Iterator, repeat};
+use std::iter::repeat;
 use std::cmp;
 use std::cmp::Ordering;
 
@@ -8,11 +7,6 @@ use dim::BroadcastDimension;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error {
   IncompatibleBroadcast
-}
-
-pub struct DenseStrideIter<'a> {
-  shape: &'a [usize],
-  range: Range<usize>
 }
 
 /// Whether two shapes are compatible for broadcasting.
@@ -42,10 +36,9 @@ pub fn compatible<'a>(shape1: &'a [usize],
 }
 
 pub fn broadcast_dims<'a>(bshape: &'a [usize],
-                          shape: &'a [usize]) -> Vec<BroadcastDimension> {
-  let mut strides = DenseStrideIter::new(shape);
-
-  BroadcastDimension::shape_from_iters(&mut shape.iter(), &mut bshape.iter(), &mut strides)
+                          shape: &'a [usize],
+                          strides: &'a [usize]) -> Vec<BroadcastDimension> {
+  BroadcastDimension::shape_from_iters(&mut shape.iter(), &mut bshape.iter(), &mut strides.iter())
 }
 
 pub fn target_shape<'a>(shape1: &'a [usize],
@@ -75,26 +68,4 @@ pub fn target_shape<'a>(shape1: &'a [usize],
     }
   }
 }
-
-impl<'a> DenseStrideIter<'a> {
-  pub fn new(shape: &'a [usize]) -> DenseStrideIter<'a> {
-    DenseStrideIter {
-      shape: shape,
-      range: 1..(shape.len() + 1)
-    }
-  }
-}
-
-impl<'a> Iterator for DenseStrideIter<'a> {
-  type Item = usize;
-
-  fn next(&mut self) -> Option<usize> {
-    self.range.next().map(|i| {
-      self.shape.iter().rev().
-        take(self.shape.len() - i).
-        fold(1, |acc, size| acc * size)
-    })
-  }
-}
-
 

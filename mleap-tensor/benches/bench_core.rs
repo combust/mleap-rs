@@ -48,7 +48,7 @@ mod bench_core {
     spec1.pop_to_tshape();
     spec2.pop_to_tshape();
 
-    let dot = spec1.zip(spec2).map(Vec::new(), |(a, b)| a.dot(b));
+    let dot = spec1.zip(spec2).map(Vec::new(), |(a, b)| a.dot(b, 1, 1));
 
     b.iter(|| {
       dot.build_dense_scalar();
@@ -69,7 +69,7 @@ mod bench_core {
     spec1.pop_to_tshape();
     spec2.pop_to_tshape();
 
-    let dot = spec1.zip(spec2).map(Vec::new(), |(a, b)| a.dot(b));
+    let dot = spec1.zip(spec2).map(Vec::new(), |(a, b)| a.dot(b, 1, 1));
 
     b.iter(|| {
       dot.build_dense_scalar();

@@ -1,3 +1,4 @@
+use std::ops::Range;
 use dim::BroadcastDimension;
 
 pub struct DenseBroadcastIter<'a, T: 'a> {
@@ -9,6 +10,11 @@ pub struct DenseIter<'a, T: 'a> {
   dim: BroadcastDimension,
   index: usize,
   buf: &'a [T]
+}
+
+pub struct DenseStrideIter<'a> {
+  shape: &'a [usize],
+  range: Range<usize>
 }
 
 impl<'a, T: 'a> DenseIter<'a, T> {
@@ -119,3 +125,25 @@ impl<'a, T: 'a> Iterator for DenseBroadcastIter<'a, T> {
     (min, Some(max))
   }
 }
+
+impl<'a> DenseStrideIter<'a> {
+  pub fn new(shape: &'a [usize]) -> DenseStrideIter<'a> {
+    DenseStrideIter {
+      shape: shape,
+      range: 1..(shape.len() + 1)
+    }
+  }
+}
+
+impl<'a> Iterator for DenseStrideIter<'a> {
+  type Item = usize;
+
+  fn next(&mut self) -> Option<usize> {
+    self.range.next().map(|i| {
+      self.shape.iter().rev().
+        take(self.shape.len() - i).
+        fold(1, |acc, size| acc * size)
+    })
+  }
+}
+

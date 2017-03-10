@@ -8,7 +8,7 @@ use std::slice::Chunks;
 use std::result::Result;
 
 use broadcast;
-use iter::DenseBroadcastIter;
+use iter::{DenseStrideIter, DenseBroadcastIter};
 
 #[derive(Debug, Clone, Copy)]
 pub enum Error {
@@ -49,6 +49,10 @@ pub trait Spec<'a> {
         f: f
       }
     }
+}
+
+pub trait ShapedSpec<'a> : Spec<'a> {
+  fn tshape(&self) -> &[usize];
 }
 
 pub struct Dense<'a, T: 'a> {
@@ -111,6 +115,10 @@ impl<'a, T: 'a> Spec<'a> for Dense<'a, T> {
   }
 }
 
+impl<'a, T: 'a> ShapedSpec<'a> for Dense<'a, T> {
+  fn tshape(&self) -> &[usize] { &self.tshape }
+}
+
 impl<'a, T: 'a> DenseBroadcast<'a, T> {
   pub fn new(bshape: Vec<usize>,
              shape: Vec<usize>,
@@ -143,10 +151,15 @@ impl<'a, T: 'a> Spec<'a> for DenseBroadcast<'a, T> {
   fn shape(&self) -> &[usize] { &self.bshape }
 
   fn iter(&'a self) -> DenseBroadcastIter<'a, T> {
-    let bdims = broadcast::broadcast_dims(&self.bshape, &self.shape);
+    let strides: Vec<usize> = DenseStrideIter::new(&self.shape).collect();
+    let bdims = broadcast::broadcast_dims(&self.bshape, &self.shape, &strides);
 
     DenseBroadcastIter::new(bdims, self.buf)
   }
+}
+
+impl<'a, T: 'a> ShapedSpec<'a> for DenseBroadcast<'a, T> {
+  fn tshape(&self) -> &[usize] { &self.tshape }
 }
 
 impl<'a, S1: Spec<'a>, S2: Spec<'a>> Spec<'a> for Zip<S1, S2> {
@@ -173,5 +186,9 @@ impl<'a, B, S: Spec<'a>, F> Spec<'a> for Map<S, F> where F: Fn(S::Item) -> B + '
   fn iter(&'a self) -> iter::Map<S::I, &'a F> {
     self.spec.iter().map(&self.f)
   }
+}
+
+impl<'a, B, S: Spec<'a>, F> ShapedSpec<'a> for Map<S, F> where F: Fn(S::Item) -> B + 'a {
+  fn tshape(&self) -> &[usize] { &self.tshape }
 }
 

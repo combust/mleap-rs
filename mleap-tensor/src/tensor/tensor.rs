@@ -2,6 +2,7 @@ use std::result::Result;
 
 use core::spec;
 use core::broadcast;
+use core::iter::DenseStrideIter;
 
 pub struct DenseTensor<T> {
   shape: Vec<usize>,
@@ -11,6 +12,10 @@ pub struct DenseTensor<T> {
 impl<T> DenseTensor<T> {
   pub fn new(shape: Vec<usize>, buf: Vec<T>) -> DenseTensor<T> {
     DenseTensor { shape: shape, buf: buf }
+  }
+
+  pub fn strides_iter(&self) -> DenseStrideIter {
+    DenseStrideIter::new(&self.shape)
   }
 
   pub fn spec<'a>(&'a self) -> spec::Dense<T> {
@@ -46,7 +51,7 @@ mod tests {
     spec1.pop_to_tshape();
     spec2.pop_to_tshape();
 
-    let zip = spec1.zip(spec2).map(Vec::new(), |(a, b)| a.dot(b));
+    let zip = spec1.zip(spec2).map(Vec::new(), |(a, b)| a.dot(b, 1, 1));
     let (nshape, nbuf) = zip.build_dense_scalar();
 
     assert_eq!(&nshape, &[1, 2]);
@@ -69,7 +74,7 @@ mod tests {
     spec1.pop_to_tshape();
     spec2.pop_to_tshape();
 
-    let mspec = spec1.zip(spec2).map(Vec::new(), |(a, b)| a.dot(b));
+    let mspec = spec1.zip(spec2).map(Vec::new(), |(a, b)| a.dot(b, 1, 1));
 
     let (nshape, nbuf) = mspec.build_dense_scalar();
 

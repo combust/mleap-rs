@@ -17,8 +17,8 @@ pub struct BroadcastDimension {
 impl BroadcastDimension {
   pub fn shape_from_iters(shape: &mut Iterator<Item=&usize>,
                       bshape: &mut Iterator<Item=&usize>,
-                      strides: &mut Iterator<Item=usize>) -> Vec<BroadcastDimension> {
-    shape.zip(bshape).zip(strides).map(|((&a, &b), s)| {
+                      strides: &mut Iterator<Item=&usize>) -> Vec<BroadcastDimension> {
+    shape.zip(bshape).zip(strides).map(|((&a, &b), &s)| {
       let stride = if a == 1 { 0 } else { s };
       let target = cmp::max(a, b);
 
