@@ -1,5 +1,6 @@
 [workspace]
 members = [
   "mleap-core",
-  "mleap-tensor"
+  "mleap-tensor",
+  "mleap-bundle"
 ]

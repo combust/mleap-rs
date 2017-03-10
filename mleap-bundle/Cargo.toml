@@ -5,4 +5,6 @@ authors = ["Hollin Wilkins <hollinrwilkins@gmail.com>"]
 
 [dependencies]
 clippy = {version = "*", optional = true}
-
+uuid = "0.4"
+semver = "0.6.0"
+zip = "0.2"
