@@ -1,5 +1,6 @@
 use serde_json::{Value, Number};
 use serde_json::map::Map;
+use std::collections::HashMap;
 use std::result::Result;
 use base64;
 use dsl;
@@ -15,10 +16,8 @@ pub trait TryFrom<T> where Self: Sized {
   fn try_from(obj: T) -> Result<Self, Self::Err>;
 }
 
-impl<'a> TryFrom<&'a dsl::Attribute> for Value {
-  type Err = JsonError;
-
-  fn try_from(value: &'a dsl::Attribute) -> Result<Self, Self::Err> {
+impl<'a> From<&'a dsl::Attribute> for Value {
+  fn from(value: &'a dsl::Attribute) -> Self {
     match value {
       &dsl::Attribute::Basic(ref basic) => {
         let (t, v) = match basic {
@@ -36,7 +35,7 @@ impl<'a> TryFrom<&'a dsl::Attribute> for Value {
         map.insert(String::from("type"), Value::from(t));
         map.insert(String::from("value"), v);
 
-        Ok(Value::Object(map))
+        Value::Object(map)
       },
       &dsl::Attribute::Tensor(ref tv) => {
         let dimensions = &tv.dimensions;
@@ -66,7 +65,7 @@ impl<'a> TryFrom<&'a dsl::Attribute> for Value {
         map.insert(String::from("base"), Value::from(b));
         map.insert(String::from("value"), Value::Object(tmap));
 
-        Ok(Value::Object(map))
+        Value::Object(map)
       },
       &dsl::Attribute::Array(ref values) => {
         let (b, v) = match values {
@@ -89,10 +88,8 @@ impl<'a> TryFrom<&'a dsl::Attribute> for Value {
         map.insert(String::from("base"), Value::from(b));
         map.insert(String::from("value"), v);
 
-        Ok(Value::Object(map))
-      },
-
-      _ => Err(JsonError::WriteError("".to_string()))
+        Value::Object(map)
+      }
     }
   }
 }
@@ -192,6 +189,25 @@ impl<'a, T: TryFrom<&'a Value, Err=JsonError>> TryFrom<&'a Value> for Vec<T> {
   }
 }
 
+impl<'a, T: TryFrom<&'a Value, Err=JsonError>> TryFrom<&'a Value> for HashMap<String, T> {
+  type Err = JsonError;
+
+  fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
+    value.as_object().map(|map| {
+      let mut acc: HashMap<String, T> = HashMap::with_capacity(map.len());
+
+      for (k, v) in map.iter() {
+        match T::try_from(v) {
+          Ok(c) => acc.insert(k.clone(), c),
+          Err(err) => return Err(err)
+        };
+      }
+
+      Ok(acc)
+    }).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+  }
+}
+
 impl<'a> TryFrom<&'a Value> for dsl::Attribute {
   type Err = JsonError;
 
@@ -268,5 +284,108 @@ impl<'a> TryFrom<&'a Value> for dsl::Attribute {
         }
       })
     }).unwrap_or_else(|| Err(JsonError::ReadError("".to_string())))
+  }
+}
+
+impl<'a> From<&'a dsl::Socket> for Value {
+  fn from(value: &'a dsl::Socket) -> Self {
+    let mut map = Map::with_capacity(2);
+    map.insert(String::from("name"), Value::from(value.name()));
+    map.insert(String::from("port"), Value::from(value.port()));
+
+    Value::Object(map)
+  }
+}
+
+impl From<dsl::Socket> for Value {
+  fn from(value: dsl::Socket) -> Self {
+    Value::from(&value)
+  }
+}
+
+impl<'a> TryFrom<&'a Value> for dsl::Socket {
+  type Err = JsonError;
+
+  fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
+    value.as_object().and_then(|map| {
+      let m_name = map.get("name").and_then(|x| x.as_str());
+      let m_port = map.get("port").and_then(|x| x.as_str());
+
+      match (m_name, m_port) {
+        (Some(name), Some(port)) => {
+          Some(Ok(dsl::Socket::new(String::from(name), String::from(port))))
+        },
+        _ => None
+      }
+    }).unwrap_or_else(|| Err(JsonError::ReadError(String::from("Invalid socket"))))
+  }
+}
+
+impl<'a> From<&'a dsl::Shape> for Value {
+  fn from(value: &'a dsl::Shape) -> Self {
+    let inputs = Value::from(value.inputs());
+    let outputs = Value::from(value.outputs());
+    let mut map = Map::with_capacity(2);
+    map.insert(String::from("inputs"), inputs);
+    map.insert(String::from("outputs"), outputs);
+
+    Value::Object(map)
+  }
+}
+
+impl<'a> TryFrom<&'a Value> for dsl::Shape {
+  type Err = JsonError;
+
+  fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
+    value.as_object().and_then(|map| {
+      match (map.get("inputs"), map.get("outputs")) {
+        (Some(jinputs), Some(joutputs)) => {
+          let tinputs = Vec::<dsl::Socket>::try_from(jinputs);
+          let toutputs = Vec::<dsl::Socket>::try_from(joutputs);
+
+          match (tinputs, toutputs) {
+            (Ok(inputs), Ok(outputs)) => Some(Ok(dsl::Shape::new(inputs, outputs))),
+            _ => None
+          }
+        },
+        _ => None
+      }
+    }).unwrap_or_else(|| Err(JsonError::ReadError(String::from(""))))
+  }
+}
+
+impl<'a> From<&'a dsl::Model> for Value {
+  fn from(value: &'a dsl::Model) -> Self {
+    let mut attrs: Map<String, Value> = value.attributes().
+      iter().
+      map(|(k, v)| (k.clone(), Value::from(v))).
+      collect();
+
+    let mut map = Map::with_capacity(2);
+    map.insert(String::from("op"), Value::from(value.op()));
+    map.insert(String::from("attributes"), Value::from(attrs));
+
+    Value::Object(map)
+  }
+}
+
+impl<'a> TryFrom<&'a Value> for dsl::Model {
+  type Err = JsonError;
+
+  fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
+    value.as_object().and_then(|map| {
+      let m_op = map.get("op").and_then(|x| x.as_str());
+      let m_attrs = map.get("attributes");
+
+      match (m_op, m_attrs) {
+        (Some(op), Some(jattrs)) => {
+          let r = HashMap::<String, dsl::Attribute>::try_from(jattrs).map(|attrs| {
+            dsl::Model::new(op.to_string(), attrs)
+          });
+          Some(r)
+        },
+        _ => None
+      }
+    }).unwrap_or_else(|| Err(JsonError::ReadError(String::from(""))))
   }
 }

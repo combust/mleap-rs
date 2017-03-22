@@ -35,11 +35,7 @@ pub enum Attribute {
   Tensor(TensorValue)
 }
 
-pub struct Model {
-  op: String,
-  attributes: HashMap<String, Attribute>
-}
-
+#[derive(Clone)]
 pub struct Socket {
   name: String,
   port: String
@@ -48,6 +44,11 @@ pub struct Socket {
 pub struct Shape {
   inputs: Vec<Socket>,
   outputs: Vec<Socket>
+}
+
+pub struct Model {
+  op: String,
+  attributes: HashMap<String, Attribute>
 }
 
 pub struct Node {
@@ -66,4 +67,41 @@ pub struct Bundle {
   name: String,
   format: Format,
   version: Version
+}
+
+impl Socket {
+  pub fn new(name: String, port: String) -> Socket {
+    Socket {
+      name: name,
+      port: port
+    }
+  }
+
+  pub fn name(&self) -> &str { &self.name }
+  pub fn port(&self) -> &str { &self.port }
+}
+
+impl Shape {
+  pub fn new(inputs: Vec<Socket>, outputs: Vec<Socket>) -> Shape {
+    Shape {
+      inputs: inputs,
+      outputs: outputs
+    }
+  }
+
+  pub fn inputs(&self) -> &[Socket] { &self.inputs }
+  pub fn outputs(&self) -> &[Socket] { &self.outputs }
+}
+
+impl Model {
+  pub fn new(op: String,
+             attributes: HashMap<String, Attribute>) -> Model {
+    Model {
+      op: op,
+      attributes: attributes
+    }
+  }
+
+  pub fn op(&self) -> &str { &self.op }
+  pub fn attributes(&self) -> &HashMap<String, Attribute> { &self.attributes }
 }
