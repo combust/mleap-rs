@@ -1,10 +1,12 @@
 [package]
-name = "mleap-bundle"
+name = "mbun"
 version = "0.1.0"
 authors = ["Hollin Wilkins <hollinrwilkins@gmail.com>"]
 
 [dependencies]
-clippy = {version = "*", optional = true}
 uuid = "0.4"
 semver = "0.6.0"
 zip = "0.2"
+serde = "0.9.11"
+serde_json = "0.9.9"
+base64 = "0.4.0"
