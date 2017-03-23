@@ -56,9 +56,13 @@ pub struct Node {
   shape: Shape
 }
 
-pub enum Format {
+pub enum ConcreteFormat {
   Json,
-  Proto,
+  Proto
+}
+
+pub enum Format {
+  Concrete(ConcreteFormat),
   Mixed
 }
 
@@ -104,4 +108,35 @@ impl Model {
 
   pub fn op(&self) -> &str { &self.op }
   pub fn attributes(&self) -> &HashMap<String, Attribute> { &self.attributes }
+}
+
+impl Node {
+  pub fn new(name: String, shape: Shape) -> Node {
+    Node {
+      name: name,
+      shape: shape
+    }
+  }
+
+  pub fn name(&self) -> &str { &self.name }
+  pub fn shape(&self) -> &Shape { &self.shape }
+}
+
+impl Bundle {
+  pub fn new(uid: Uuid,
+             name: String,
+             format: Format,
+             version: Version) -> Bundle {
+    Bundle {
+      uid: uid,
+      name: name,
+      format: format,
+      version: version
+    }
+  }
+
+  pub fn uid(&self) -> &Uuid { &self.uid }
+  pub fn name(&self) -> &str { &self.name }
+  pub fn format(&self) -> &Format { &self.format }
+  pub fn version(&self) -> &Version { &self.version }
 }

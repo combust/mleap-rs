@@ -1,7 +1,9 @@
-use serde_json::{Value, Number};
+use serde_json::Value;
 use serde_json::map::Map;
 use std::collections::HashMap;
 use std::result::Result;
+use uuid::Uuid;
+use semver::Version;
 use base64;
 use dsl;
 
@@ -52,8 +54,7 @@ impl<'a> From<&'a dsl::Attribute> for Value {
           &dsl::VectorValue::ByteString(ref v) => {
             let vs: Vec<String> = v.iter().map(|s| base64::encode(s)).collect();
             ("byte_string", Value::from(vs.as_slice()))
-          },
-          _ => ("double", Value::from(32.0)),
+          }
         };
 
         let mut tmap = Map::with_capacity(2);
@@ -79,8 +80,7 @@ impl<'a> From<&'a dsl::Attribute> for Value {
           &dsl::VectorValue::ByteString(ref v) => {
             let vs: Vec<String> = v.iter().map(|s| base64::encode(s)).collect();
             ("byte_string", Value::from(vs.as_slice()))
-          },
-          _ => ("double", Value::from(32.0)),
+          }
         };
 
         let mut map = Map::with_capacity(3);
@@ -356,7 +356,7 @@ impl<'a> TryFrom<&'a Value> for dsl::Shape {
 
 impl<'a> From<&'a dsl::Model> for Value {
   fn from(value: &'a dsl::Model) -> Self {
-    let mut attrs: Map<String, Value> = value.attributes().
+    let attrs: Map<String, Value> = value.attributes().
       iter().
       map(|(k, v)| (k.clone(), Value::from(v))).
       collect();
@@ -383,6 +383,115 @@ impl<'a> TryFrom<&'a Value> for dsl::Model {
             dsl::Model::new(op.to_string(), attrs)
           });
           Some(r)
+        },
+        _ => None
+      }
+    }).unwrap_or_else(|| Err(JsonError::ReadError(String::from(""))))
+  }
+}
+
+impl<'a> From<&'a dsl::Node> for Value {
+  fn from(value: &'a dsl::Node) -> Self {
+    let mut map = Map::with_capacity(2);
+    map.insert(String::from("name"), Value::from(value.name()));
+    map.insert(String::from("shape"), Value::from(value.shape()));
+
+    Value::Object(map)
+  }
+}
+
+impl<'a> TryFrom<&'a Value> for dsl::Node {
+  type Err = JsonError;
+
+  fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
+    value.as_object().and_then(|map| {
+      let m_name = map.get("name").and_then(|x| x.as_str());
+      let m_shape = map.get("shape");
+
+      match (m_name, m_shape) {
+        (Some(name), Some(jshape)) => {
+          let r = dsl::Shape::try_from(jshape).map(|shape| {
+            dsl::Node::new(name.to_string(), shape)
+          });
+          Some(r)
+        },
+        _ => None
+      }
+    }).unwrap_or_else(|| Err(JsonError::ReadError(String::from(""))))
+  }
+}
+
+impl<'a> From<&'a dsl::Format> for Value {
+  fn from(value: &'a dsl::Format) -> Self {
+    match *value {
+      dsl::Format::Concrete(dsl::ConcreteFormat::Json) => Value::from("json"),
+      dsl::Format::Concrete(dsl::ConcreteFormat::Proto) => Value::from("proto"),
+      dsl::Format::Mixed => Value::from("mixed")
+    }
+  }
+}
+
+impl<'a> TryFrom<&'a Value> for dsl::Format {
+  type Err = JsonError;
+
+  fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
+    match value {
+      &Value::String(ref name) => {
+        match name.as_ref() {
+          "json" => Ok(dsl::Format::Concrete(dsl::ConcreteFormat::Json)),
+          "proto" => Ok(dsl::Format::Concrete(dsl::ConcreteFormat::Json)),
+          "mixed" => Ok(dsl::Format::Mixed),
+          _ => Err(JsonError::ReadError(String::from("")))
+        }
+      },
+      _ => Err(JsonError::ReadError(String::from("")))
+    }
+  }
+}
+
+impl<'a> From<&'a dsl::Bundle> for Value {
+  fn from(value: &'a dsl::Bundle) -> Self {
+    let mut map = Map::with_capacity(4);
+    map.insert(String::from("uid"), Value::from(value.uid().to_string()));
+    map.insert(String::from("name"), Value::from(value.name()));
+    map.insert(String::from("format"), Value::from(value.format()));
+    map.insert(String::from("version"), Value::from(value.version().to_string()));
+
+    Value::Object(map)
+  }
+}
+
+impl<'a> TryFrom<&'a Value> for dsl::Bundle {
+  type Err = JsonError;
+
+  fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
+    value.as_object().and_then(|map| {
+      let m_uid = map.get("uid").
+        and_then(|x| x.as_str()).
+        map(|u| {
+          Uuid::parse_str(u).map_err(|_| {
+            JsonError::ReadError(String::from("Invalid UUID"))
+          })
+        });
+      let m_name = map.get("name").and_then(|x| x.as_str());
+      let m_format = map.get("format").
+        map(|x| dsl::Format::try_from(x));
+      let m_version = map.get("version").
+        and_then(|x| x.as_str()).
+        map(|x| {
+          Version::parse(x).map_err(|_| {
+            JsonError::ReadError(String::from("Invalid semantic version"))
+          })
+        });
+
+      match (m_uid, m_name, m_format, m_version) {
+        (Some(r_uid), Some(name), Some(r_format), Some(r_version)) => {
+          match (r_uid, r_format, r_version) {
+            (Ok(uid), Ok(format), Ok(version)) => {
+              Some(Ok(dsl::Bundle::new(uid, name.to_string(), format, version)))
+            },
+            _ => None
+          }
         },
         _ => None
       }

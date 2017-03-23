@@ -1,5 +1,3 @@
-#![feature(try_from)]
-
 extern crate uuid;
 extern crate semver;
 extern crate serde;
