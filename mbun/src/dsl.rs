@@ -108,6 +108,11 @@ impl Model {
 
   pub fn op(&self) -> &str { &self.op }
   pub fn attributes(&self) -> &HashMap<String, Attribute> { &self.attributes }
+
+  pub fn with_attr(&mut self, name: &str, attr: Attribute) -> &mut Self {
+    self.attributes.insert(name.to_string(), attr);
+    self
+  }
 }
 
 impl Node {

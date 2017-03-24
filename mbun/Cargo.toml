@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Hollin Wilkins <hollinrwilkins@gmail.com>"]
 
 [dependencies]
-uuid = "0.4"
+uuid = { version = "0.4", features = ["v4"] }
 semver = "0.6.0"
 zip = "0.2"
 serde = "0.9.11"

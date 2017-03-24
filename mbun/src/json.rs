@@ -7,7 +7,8 @@ use semver::Version;
 use base64;
 use dsl;
 
-pub enum JsonError {
+#[derive(Debug, Clone)]
+pub enum Error {
   WriteError(String),
   ReadError(String)
 }
@@ -99,79 +100,79 @@ fn basic_attribute(basic: dsl::BasicValue) -> dsl::Attribute {
 }
 
 impl<'a> TryFrom<&'a Value> for usize {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
-    value.as_u64().map(|v| Ok(v as usize)).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+    value.as_u64().map(|v| Ok(v as usize)).unwrap_or_else(|| Err(Error::ReadError("invalid usize".to_string())))
   }
 }
 
 impl<'a> TryFrom<&'a Value> for bool {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
-    value.as_bool().map(|v| Ok(v)).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+    value.as_bool().map(|v| Ok(v)).unwrap_or_else(|| Err(Error::ReadError("invalid usize".to_string())))
   }
 }
 
 impl<'a> TryFrom<&'a Value> for i8 {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
-    value.as_i64().map(|v| Ok(v as i8)).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+    value.as_i64().map(|v| Ok(v as i8)).unwrap_or_else(|| Err(Error::ReadError("invalid usize".to_string())))
   }
 }
 
 impl<'a> TryFrom<&'a Value> for i16 {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
-    value.as_i64().map(|v| Ok(v as i16)).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+    value.as_i64().map(|v| Ok(v as i16)).unwrap_or_else(|| Err(Error::ReadError("invalid usize".to_string())))
   }
 }
 
 impl<'a> TryFrom<&'a Value> for i32 {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
-    value.as_i64().map(|v| Ok(v as i32)).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+    value.as_i64().map(|v| Ok(v as i32)).unwrap_or_else(|| Err(Error::ReadError("invalid usize".to_string())))
   }
 }
 
 impl<'a> TryFrom<&'a Value> for i64 {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
-    value.as_i64().map(|v| Ok(v as i64)).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+    value.as_i64().map(|v| Ok(v as i64)).unwrap_or_else(|| Err(Error::ReadError("invalid usize".to_string())))
   }
 }
 
 impl<'a> TryFrom<&'a Value> for f32 {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
-    value.as_f64().map(|v| Ok(v as f32)).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+    value.as_f64().map(|v| Ok(v as f32)).unwrap_or_else(|| Err(Error::ReadError("invalid usize".to_string())))
   }
 }
 
 impl<'a> TryFrom<&'a Value> for f64 {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
-    value.as_f64().map(|v| Ok(v)).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+    value.as_f64().map(|v| Ok(v)).unwrap_or_else(|| Err(Error::ReadError("invalid usize".to_string())))
   }
 }
 
 impl<'a> TryFrom<&'a Value> for String {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
-    value.as_str().map(|v| Ok(v.to_string())).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+    value.as_str().map(|v| Ok(v.to_string())).unwrap_or_else(|| Err(Error::ReadError("invalid usize".to_string())))
   }
 }
 
-impl<'a, T: TryFrom<&'a Value, Err=JsonError>> TryFrom<&'a Value> for Vec<T> {
-  type Err = JsonError;
+impl<'a, T: TryFrom<&'a Value, Err=Error>> TryFrom<&'a Value> for Vec<T> {
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
     value.as_array().map(|arr| {
@@ -185,12 +186,12 @@ impl<'a, T: TryFrom<&'a Value, Err=JsonError>> TryFrom<&'a Value> for Vec<T> {
       }
 
       Ok(acc)
-    }).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+    }).unwrap_or_else(|| Err(Error::ReadError("invalid usize".to_string())))
   }
 }
 
-impl<'a, T: TryFrom<&'a Value, Err=JsonError>> TryFrom<&'a Value> for HashMap<String, T> {
-  type Err = JsonError;
+impl<'a, T: TryFrom<&'a Value, Err=Error>> TryFrom<&'a Value> for HashMap<String, T> {
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
     value.as_object().map(|map| {
@@ -204,12 +205,12 @@ impl<'a, T: TryFrom<&'a Value, Err=JsonError>> TryFrom<&'a Value> for HashMap<St
       }
 
       Ok(acc)
-    }).unwrap_or_else(|| Err(JsonError::ReadError("invalid usize".to_string())))
+    }).unwrap_or_else(|| Err(Error::ReadError("invalid usize".to_string())))
   }
 }
 
 impl<'a> TryFrom<&'a Value> for dsl::Attribute {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
     value.as_object().and_then(|map| {
@@ -230,7 +231,7 @@ impl<'a> TryFrom<&'a Value> for dsl::Attribute {
                           "long" => Vec::<i64>::try_from(jvalues).map(|v| dsl::VectorValue::Long(v)),
                           "float" => Vec::<f32>::try_from(jvalues).map(|v| dsl::VectorValue::Float(v)),
                           "double" => Vec::<f64>::try_from(jvalues).map(|v| dsl::VectorValue::Double(v)),
-                          _ => Err(JsonError::ReadError("".to_string()))
+                          _ => Err(Error::ReadError("".to_string()))
                         }).map(|values| {
                           dsl::Attribute::Tensor(dsl::TensorValue {
                             dimensions: dims,
@@ -258,7 +259,7 @@ impl<'a> TryFrom<&'a Value> for dsl::Attribute {
                   "long" => Vec::<i64>::try_from(jvalues).map(|v| dsl::VectorValue::Long(v)),
                   "float" => Vec::<f32>::try_from(jvalues).map(|v| dsl::VectorValue::Float(v)),
                   "double" => Vec::<f64>::try_from(jvalues).map(|v| dsl::VectorValue::Double(v)),
-                  _ => Err(JsonError::ReadError("".to_string()))
+                  _ => Err(Error::ReadError("".to_string()))
                 }).map(|values| dsl::Attribute::Array(values));
 
                 Some(r)
@@ -277,13 +278,13 @@ impl<'a> TryFrom<&'a Value> for dsl::Attribute {
             value.as_str().map(|v64| {
               base64::decode(v64).
                 map(|v| basic_attribute(dsl::BasicValue::ByteString(v))).
-                map_err(|_| JsonError::ReadError("Invalid base64 string".to_string()))
+                map_err(|_| Error::ReadError("Invalid base64 string".to_string()))
             })
           },
           _ => None
         }
       })
-    }).unwrap_or_else(|| Err(JsonError::ReadError("".to_string())))
+    }).unwrap_or_else(|| Err(Error::ReadError("".to_string())))
   }
 }
 
@@ -304,7 +305,7 @@ impl From<dsl::Socket> for Value {
 }
 
 impl<'a> TryFrom<&'a Value> for dsl::Socket {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
     value.as_object().and_then(|map| {
@@ -317,7 +318,7 @@ impl<'a> TryFrom<&'a Value> for dsl::Socket {
         },
         _ => None
       }
-    }).unwrap_or_else(|| Err(JsonError::ReadError(String::from("Invalid socket"))))
+    }).unwrap_or_else(|| Err(Error::ReadError(String::from("Invalid socket"))))
   }
 }
 
@@ -334,7 +335,7 @@ impl<'a> From<&'a dsl::Shape> for Value {
 }
 
 impl<'a> TryFrom<&'a Value> for dsl::Shape {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
     value.as_object().and_then(|map| {
@@ -350,7 +351,7 @@ impl<'a> TryFrom<&'a Value> for dsl::Shape {
         },
         _ => None
       }
-    }).unwrap_or_else(|| Err(JsonError::ReadError(String::from(""))))
+    }).unwrap_or_else(|| Err(Error::ReadError(String::from(""))))
   }
 }
 
@@ -370,7 +371,7 @@ impl<'a> From<&'a dsl::Model> for Value {
 }
 
 impl<'a> TryFrom<&'a Value> for dsl::Model {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
     value.as_object().and_then(|map| {
@@ -386,7 +387,7 @@ impl<'a> TryFrom<&'a Value> for dsl::Model {
         },
         _ => None
       }
-    }).unwrap_or_else(|| Err(JsonError::ReadError(String::from(""))))
+    }).unwrap_or_else(|| Err(Error::ReadError(String::from(""))))
   }
 }
 
@@ -401,7 +402,7 @@ impl<'a> From<&'a dsl::Node> for Value {
 }
 
 impl<'a> TryFrom<&'a Value> for dsl::Node {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
     value.as_object().and_then(|map| {
@@ -417,7 +418,7 @@ impl<'a> TryFrom<&'a Value> for dsl::Node {
         },
         _ => None
       }
-    }).unwrap_or_else(|| Err(JsonError::ReadError(String::from(""))))
+    }).unwrap_or_else(|| Err(Error::ReadError(String::from(""))))
   }
 }
 
@@ -432,7 +433,7 @@ impl<'a> From<&'a dsl::Format> for Value {
 }
 
 impl<'a> TryFrom<&'a Value> for dsl::Format {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
     match value {
@@ -441,10 +442,10 @@ impl<'a> TryFrom<&'a Value> for dsl::Format {
           "json" => Ok(dsl::Format::Concrete(dsl::ConcreteFormat::Json)),
           "proto" => Ok(dsl::Format::Concrete(dsl::ConcreteFormat::Json)),
           "mixed" => Ok(dsl::Format::Mixed),
-          _ => Err(JsonError::ReadError(String::from("")))
+          _ => Err(Error::ReadError(String::from("")))
         }
       },
-      _ => Err(JsonError::ReadError(String::from("")))
+      _ => Err(Error::ReadError(String::from("")))
     }
   }
 }
@@ -462,7 +463,7 @@ impl<'a> From<&'a dsl::Bundle> for Value {
 }
 
 impl<'a> TryFrom<&'a Value> for dsl::Bundle {
-  type Err = JsonError;
+  type Err = Error;
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
     value.as_object().and_then(|map| {
@@ -470,7 +471,7 @@ impl<'a> TryFrom<&'a Value> for dsl::Bundle {
         and_then(|x| x.as_str()).
         map(|u| {
           Uuid::parse_str(u).map_err(|_| {
-            JsonError::ReadError(String::from("Invalid UUID"))
+            Error::ReadError(String::from("Invalid UUID"))
           })
         });
       let m_name = map.get("name").and_then(|x| x.as_str());
@@ -480,7 +481,7 @@ impl<'a> TryFrom<&'a Value> for dsl::Bundle {
         and_then(|x| x.as_str()).
         map(|x| {
           Version::parse(x).map_err(|_| {
-            JsonError::ReadError(String::from("Invalid semantic version"))
+            Error::ReadError(String::from("Invalid semantic version"))
           })
         });
 
@@ -495,6 +496,6 @@ impl<'a> TryFrom<&'a Value> for dsl::Bundle {
         },
         _ => None
       }
-    }).unwrap_or_else(|| Err(JsonError::ReadError(String::from(""))))
+    }).unwrap_or_else(|| Err(Error::ReadError(String::from(""))))
   }
 }

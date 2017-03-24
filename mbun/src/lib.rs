@@ -7,6 +7,7 @@ extern crate core;
 
 pub mod dsl;
 pub mod json;
+pub mod ser;
 
 pub use self::dsl::*;
 pub use self::json::*;
