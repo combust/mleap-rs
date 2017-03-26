@@ -1,6 +1,7 @@
-use super::Transformer;
 use ser::*;
 use std::any::*;
+use tform::{self, DefaultNode};
+use frame;
 use dsl;
 
 #[derive(Clone)]
@@ -18,8 +19,27 @@ pub struct LinearRegression {
 
 pub struct LinearRegressionOp { }
 
+impl LinearRegressionModel {
+  pub fn predict(&self, features: &dsl::DenseTensor<f64>) -> f64 {
+    let dot: f64 = features.values().iter().zip(self.coefficients.values().iter()).map(|(a, b)| a * b).sum();
+    dot + self.intercept
+  }
+}
 impl OpNode for LinearRegression { }
-impl Transformer for LinearRegression {
+
+impl frame::Transformer for LinearRegression {
+  fn transform(&self, frame: &mut frame::LeapFrame) -> frame::Result<()> {
+    frame.try_double_tensors(&self.features_col).map(|features_data| {
+      features_data.iter().map(|features| {
+        self.model.predict(features)
+      }).collect::<Vec<f64>>()
+    }).and_then(|predictions| {
+      frame.try_with_doubles(self.prediction_col.clone(), predictions).map(|_| ())
+    })
+  }
+}
+
+impl DefaultNode for LinearRegression {
   fn name(&self) -> &str { &self.name }
   fn model(&self) -> &Any { &self.model as &Any }
 
@@ -30,14 +50,14 @@ impl Transformer for LinearRegression {
 }
 
 impl Op for LinearRegressionOp {
-    type Node = Box<Transformer>;
+    type Node = Box<tform::DefaultNode>;
 
     fn type_id(&self) -> TypeId { TypeId::of::<LinearRegression>() }
     fn op(&self) -> &'static str { "my_node" }
 
     fn name<'a>(&self, node: &'a Self::Node) -> &'a str { node.name() }
 
-    fn model<'a>(&self, node: &'a Self::Node) -> &'a Any { Transformer::model(node.as_ref()) }
+    fn model<'a>(&self, node: &'a Self::Node) -> &'a Any { DefaultNode::model(node.as_ref()) }
 
     fn store_model(&self,
                    obj: &Any,
@@ -80,7 +100,7 @@ impl Op for LinearRegressionOp {
             model: lr.clone()
           }
         })
-      }).map(|x| Ok(Box::new(x) as Box<Transformer>)).
+      }).map(|x| Ok(Box::new(x) as Box<DefaultNode>)).
       unwrap_or_else(|| Err(Error::DowncastError(String::from(""))))
     }
   }

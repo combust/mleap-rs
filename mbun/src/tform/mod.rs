@@ -2,9 +2,10 @@ pub mod linear_regression;
 
 use std::any::{Any, TypeId};
 use ser::OpNode;
+use frame;
 use dsl;
 
-pub trait Transformer: OpNode {
+pub trait DefaultNode: OpNode + frame::Transformer {
   fn name(&self) -> &str;
   fn model(&self) -> &Any;
 
@@ -14,6 +15,6 @@ pub trait Transformer: OpNode {
   }
 }
 
-impl OpNode for Box<Transformer> {
-  fn type_id(&self) -> TypeId { Transformer::type_id(self.as_ref()) }
+impl OpNode for Box<DefaultNode> {
+  fn type_id(&self) -> TypeId { DefaultNode::type_id(self.as_ref()) }
 }
