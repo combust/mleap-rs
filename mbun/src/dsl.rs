@@ -95,6 +95,16 @@ impl Shape {
 
   pub fn inputs(&self) -> &[Socket] { &self.inputs }
   pub fn outputs(&self) -> &[Socket] { &self.outputs }
+
+  pub fn get_standard_io(&self) -> Option<(&Socket, &Socket)> {
+    self.get_io("input", "output")
+  }
+
+  pub fn get_io(&self, input: &str, output: &str) -> Option<(&Socket, &Socket)> {
+    self.inputs.iter().find(|s| s.port() == input).and_then(|i| {
+      self.outputs.iter().find(|s| s.port() == output).map(|o| (i, o))
+    })
+  }
 }
 
 impl Model {
@@ -112,6 +122,10 @@ impl Model {
   pub fn with_attr(&mut self, name: &str, attr: Attribute) -> &mut Self {
     self.attributes.insert(name.to_string(), attr);
     self
+  }
+
+  pub fn get_attr(&self, name: &str) -> Option<&Attribute> {
+    self.attributes.get(name)
   }
 }
 
