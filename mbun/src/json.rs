@@ -41,25 +41,22 @@ impl<'a> From<&'a dsl::Attribute> for Value {
         Value::Object(map)
       },
       &dsl::Attribute::Tensor(ref tv) => {
-        let dimensions = &tv.dimensions;
-        let values = &tv.values;
-
-        let (b, v) = match values {
-          &dsl::VectorValue::Bool(ref v) => ("bool", Value::from(v.as_slice())),
-          &dsl::VectorValue::Byte(ref v) => ("byte", Value::from(v.as_slice())),
-          &dsl::VectorValue::Short(ref v) => ("short", Value::from(v.as_slice())),
-          &dsl::VectorValue::Int(ref v) => ("int", Value::from(v.as_slice())),
-          &dsl::VectorValue::Long(ref v) => ("long", Value::from(v.as_slice())),
-          &dsl::VectorValue::Float(ref v) => ("float", Value::from(v.as_slice())),
-          &dsl::VectorValue::Double(ref v) => ("double", Value::from(v.as_slice())),
-          &dsl::VectorValue::ByteString(ref v) => {
-            let vs: Vec<String> = v.iter().map(|s| base64::encode(s)).collect();
-            ("byte_string", Value::from(vs.as_slice()))
+        let (b, d, v) = match tv {
+          &dsl::TensorValue::Bool(ref v) => ("bool", v.dimensions(), Value::from(v.values())),
+          &dsl::TensorValue::Byte(ref v) => ("byte", v.dimensions(), Value::from(v.values())),
+          &dsl::TensorValue::Short(ref v) => ("short", v.dimensions(), Value::from(v.values())),
+          &dsl::TensorValue::Int(ref v) => ("int", v.dimensions(), Value::from(v.values())),
+          &dsl::TensorValue::Long(ref v) => ("long", v.dimensions(), Value::from(v.values())),
+          &dsl::TensorValue::Float(ref v) => ("float", v.dimensions(), Value::from(v.values())),
+          &dsl::TensorValue::Double(ref v) => ("double", v.dimensions(), Value::from(v.values())),
+          &dsl::TensorValue::ByteString(ref v) => {
+            let vs: Vec<String> = v.values().iter().map(|s| base64::encode(s)).collect();
+            ("byte_string", v.dimensions(), Value::from(vs.as_slice()))
           }
         };
 
         let mut tmap = Map::with_capacity(2);
-        tmap.insert(String::from("dimensions"), Value::from(dimensions.as_slice()));
+        tmap.insert(String::from("dimensions"), Value::from(d));
         tmap.insert(String::from("values"), v);
 
         let mut map = Map::with_capacity(3);
@@ -224,21 +221,16 @@ impl<'a> TryFrom<&'a Value> for dsl::Attribute {
                     (Some(jdims), Some(jvalues)) => {
                       let r = Vec::<usize>::try_from(jdims).and_then(|dims| {
                         (match base.as_ref() {
-                          "bool" => Vec::<bool>::try_from(jvalues).map(|v| dsl::VectorValue::Bool(v)),
-                          "byte" => Vec::<i8>::try_from(jvalues).map(|v| dsl::VectorValue::Byte(v)),
-                          "short" => Vec::<i16>::try_from(jvalues).map(|v| dsl::VectorValue::Short(v)),
-                          "int" => Vec::<i32>::try_from(jvalues).map(|v| dsl::VectorValue::Int(v)),
-                          "long" => Vec::<i64>::try_from(jvalues).map(|v| dsl::VectorValue::Long(v)),
-                          "float" => Vec::<f32>::try_from(jvalues).map(|v| dsl::VectorValue::Float(v)),
-                          "double" => Vec::<f64>::try_from(jvalues).map(|v| dsl::VectorValue::Double(v)),
+                          "bool" => Vec::<bool>::try_from(jvalues).map(|v| dsl::TensorValue::Bool(dsl::DenseTensor::new(dims, v))),
+                          "byte" => Vec::<i8>::try_from(jvalues).map(|v| dsl::TensorValue::Byte(dsl::DenseTensor::new(dims, v))),
+                          "short" => Vec::<i16>::try_from(jvalues).map(|v| dsl::TensorValue::Short(dsl::DenseTensor::new(dims, v))),
+                          "int" => Vec::<i32>::try_from(jvalues).map(|v| dsl::TensorValue::Int(dsl::DenseTensor::new(dims, v))),
+                          "long" => Vec::<i64>::try_from(jvalues).map(|v| dsl::TensorValue::Long(dsl::DenseTensor::new(dims, v))),
+                          "float" => Vec::<f32>::try_from(jvalues).map(|v| dsl::TensorValue::Float(dsl::DenseTensor::new(dims, v))),
+                          "double" => Vec::<f64>::try_from(jvalues).map(|v| dsl::TensorValue::Double(dsl::DenseTensor::new(dims, v))),
                           _ => Err(Error::ReadError("".to_string()))
-                        }).map(|values| {
-                          dsl::Attribute::Tensor(dsl::TensorValue {
-                            dimensions: dims,
-                            values: values
-                          })
                         })
-                      });
+                      }).map(|t| dsl::Attribute::Tensor(t));
                       Some(r)
                     },
                     _ => None

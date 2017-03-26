@@ -2,6 +2,12 @@ use std::collections::HashMap;
 use uuid::Uuid;
 use semver::Version;
 
+#[derive(Clone)]
+pub struct DenseTensor<T> {
+  dimensions: Vec<usize>,
+  values: Vec<T>
+}
+
 pub enum VectorValue {
   Bool(Vec<bool>),
   Byte(Vec<i8>),
@@ -13,9 +19,15 @@ pub enum VectorValue {
   ByteString(Vec<Vec<u8>>)
 }
 
-pub struct TensorValue {
-  pub dimensions: Vec<usize>,
-  pub values: VectorValue
+pub enum TensorValue {
+  Bool(DenseTensor<bool>),
+  Byte(DenseTensor<i8>),
+  Short(DenseTensor<i16>),
+  Int(DenseTensor<i32>),
+  Long(DenseTensor<i64>),
+  Float(DenseTensor<f32>),
+  Double(DenseTensor<f64>),
+  ByteString(DenseTensor<Vec<u8>>)
 }
 
 pub enum BasicValue {
@@ -73,6 +85,18 @@ pub struct Bundle {
   version: Version
 }
 
+impl<T> DenseTensor<T> {
+  pub fn new(dimensions: Vec<usize>, values: Vec<T>) -> DenseTensor<T> {
+    DenseTensor {
+      dimensions: dimensions,
+      values: values
+    }
+  }
+
+  pub fn dimensions(&self) -> &[usize] { &self.dimensions }
+  pub fn values(&self) -> &[T] { &self.values }
+}
+
 impl Socket {
   pub fn new(name: String, port: String) -> Socket {
     Socket {
@@ -126,6 +150,24 @@ impl Model {
 
   pub fn get_attr(&self, name: &str) -> Option<&Attribute> {
     self.attributes.get(name)
+  }
+
+  pub fn get_double(&self, name: &str) -> Option<f64> {
+    self.attributes.get(name).and_then(|x| {
+      match x {
+        &Attribute::Basic(BasicValue::Double(i)) => Some(i),
+        _ => None
+      }
+    })
+  }
+
+  pub fn get_double_tensor(&self, name: &str) -> Option<&DenseTensor<f64>> {
+    self.attributes.get(name).and_then(|x| {
+      match x {
+        &Attribute::Tensor(TensorValue::Double(ref tensor)) => Some(tensor),
+        _ => None
+      }
+    })
   }
 }
 
