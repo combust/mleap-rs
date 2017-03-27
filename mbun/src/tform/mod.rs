@@ -1,4 +1,5 @@
 pub mod linear_regression;
+pub mod string_indexer;
 
 use std::any::{Any, TypeId};
 use ser::OpNode;

@@ -10,6 +10,7 @@ pub struct DenseTensor<T> {
 
 pub enum VectorValue {
   Bool(Vec<bool>),
+  String(Vec<String>),
   Byte(Vec<i8>),
   Short(Vec<i16>),
   Int(Vec<i32>),
@@ -21,6 +22,7 @@ pub enum VectorValue {
 
 pub enum TensorValue {
   Bool(DenseTensor<bool>),
+  String(DenseTensor<String>),
   Byte(DenseTensor<i8>),
   Short(DenseTensor<i16>),
   Int(DenseTensor<i32>),
@@ -32,6 +34,7 @@ pub enum TensorValue {
 
 pub enum BasicValue {
   Bool(bool),
+  String(String),
   Byte(i8),
   Short(i16),
   Int(i32),
@@ -117,6 +120,13 @@ impl Shape {
     }
   }
 
+  pub fn with_standard_io(input: String, output: String) -> Shape {
+    Shape {
+      inputs: vec![Socket::new(input, String::from("input"))],
+      outputs: vec![Socket::new(output, String::from("output"))]
+    }
+  }
+
   pub fn inputs(&self) -> &[Socket] { &self.inputs }
   pub fn outputs(&self) -> &[Socket] { &self.outputs }
 
@@ -165,6 +175,15 @@ impl Model {
     self.attributes.get(name).and_then(|x| {
       match x {
         &Attribute::Tensor(TensorValue::Double(ref tensor)) => Some(tensor),
+        _ => None
+      }
+    })
+  }
+
+  pub fn get_string_vector(&self, name: &str) -> Option<&[String]> {
+    self.attributes.get(name).and_then(|x| {
+      match x {
+        &Attribute::Array(VectorValue::String(ref v)) => Some(v.as_slice()),
         _ => None
       }
     })
