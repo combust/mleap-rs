@@ -139,6 +139,10 @@ impl Shape {
       self.outputs.iter().find(|s| s.port() == output).map(|o| (i, o))
     })
   }
+
+  pub fn get_output(&self, port: &str) -> Option<&Socket> {
+    self.outputs.iter().find(|s| s.port() == port)
+  }
 }
 
 impl Model {

@@ -58,6 +58,13 @@ pub struct LeapFrame {
 }
 
 impl Col {
+  pub fn new(name: String, data: ColData) -> Col {
+    Col {
+      name: name,
+      data: data
+    }
+  }
+
   pub fn from_doubles(name: String, v: Vec<f64>) -> Col {
     Col {
       name: name,
@@ -87,6 +94,7 @@ impl Col {
   }
 
   pub fn name(&self) -> &str { &self.name }
+  pub fn data(&self) -> &ColData { &self.data }
 
   pub fn get_doubles(&self) -> Option<&[f64]> {
     match self.data {
@@ -156,8 +164,22 @@ impl LeapFrame {
   pub fn get_col(&self, name: &str) -> Option<&Col> {
     self.col_indices_by_name.get(name).map(|i| &self.cols[*i])
   }
+
   pub fn try_col(&self, name: &str) -> Result<&Col> {
     self.get_col(name).map(|x| Ok(x)).unwrap_or_else(|| Err(Error::NoSuchColumn(String::from(name))))
+  }
+
+  pub fn try_cols(&self, names: &[String]) -> Result<Vec<&Col>> {
+    let mut cols = Vec::with_capacity(names.len());
+
+    for name in names.iter() {
+      match self.try_col(name) {
+        Ok(col) => cols.push(col),
+        Err(err) => return Err(err)
+      }
+    }
+
+    Ok(cols)
   }
 
   pub fn get_doubles(&self, name: &str) -> Option<&[f64]> { self.get_col(name).and_then(|c| c.get_doubles()) }
