@@ -54,7 +54,7 @@ pub struct Registry<'a, Node: 'a> {
 }
 
 pub trait Builder {
-  fn next(&self, name: &str) -> Result<Box<Builder>>;
+  fn try_next(&self, name: &str) -> Result<Box<Builder>>;
 
   fn write(&self, name: &str) -> Result<Box<io::Write>>;
   fn read(&self, name: &str) -> Result<Box<io::Read>>;
@@ -138,13 +138,13 @@ impl<'a, Node: Sized + 'a> Context<'a, Node> {
   pub fn builder(&self) -> &Builder { self.builder.as_ref() }
   pub fn registry(&self) -> &Registry<Node> { &self.registry }
 
-  pub fn next(&self, name: &str) -> Result<Context<'a, Node>> {
-    self.builder.next(name).map(|b| Context { builder: b, registry: self.registry })
+  pub fn try_next(&self, name: &str) -> Result<Context<'a, Node>> {
+    self.builder.try_next(name).map(|b| Context { builder: b, registry: self.registry })
   }
 }
 
 impl FileBuilder {
-  pub fn new<P: AsRef<path::Path>>(path: P) -> Result<FileBuilder> {
+  pub fn try_new<P: AsRef<path::Path>>(path: P) -> Result<FileBuilder> {
     let r = fs::create_dir_all(&path).map(|_| {
       FileBuilder {
         path: path.as_ref().to_path_buf()
@@ -156,8 +156,8 @@ impl FileBuilder {
 }
 
 impl Builder for FileBuilder {
-  fn next(&self, name: &str) -> Result<Box<Builder>> {
-    FileBuilder::new(self.path.join(name)).map(|x| Box::new(x) as Box<Builder>)
+  fn try_next(&self, name: &str) -> Result<Box<Builder>> {
+    FileBuilder::try_new(self.path.join(name)).map(|x| Box::new(x) as Box<Builder>)
   }
 
   fn write(&self, name: &str) -> Result<Box<io::Write>> {
@@ -179,7 +179,7 @@ impl<'a, Node: OpNode + 'a> Context<'a, Node> {
         let json = Value::from(bundle);
         from_serde_json_result(serde_json::to_writer_pretty(out, &json)).
           and_then(|_| {
-            self.next("root").
+            self.try_next("root").
               and_then(|ctx| {
                 ctx.write_node_and_model(root)
               })
@@ -221,13 +221,9 @@ impl<'a, Node: OpNode + 'a> Context<'a, Node> {
 
 impl<'a, Node: OpNode + 'a> Context<'a, Node> {
   pub fn read_bundle(&self) -> Result<(dsl::Bundle, Node)> {
-    self.builder.read_buf("bundle.json").and_then(|ref mut r| {
-      from_serde_json_result(serde_json::from_reader(r)).and_then(|json: Value| {
-        from_json_result(dsl::Bundle::try_from(&json)).and_then(|bundle| {
-          self.next("root").and_then(|ctx| {
-            ctx.read_node().map(|node| (bundle, node))
-          })
-        })
+    self.read_dsl_bundle().and_then(|bundle| {
+      self.try_next("root").and_then(|ctx| {
+        ctx.read_node().map(|node| (bundle, node))
       })
     })
   }
@@ -240,6 +236,14 @@ impl<'a, Node: OpNode + 'a> Context<'a, Node> {
             op.load(&d_node, model, self)
           })
         })
+      })
+    })
+  }
+
+  pub fn read_dsl_bundle(&self) -> Result<dsl::Bundle> {
+    self.builder.read_buf("bundle.json").and_then(|ref mut r| {
+      from_serde_json_result(serde_json::from_reader(r)).and_then(|json: Value| {
+        from_json_result(dsl::Bundle::try_from(&json))
       })
     })
   }
@@ -258,129 +262,5 @@ impl<'a, Node: OpNode + 'a> Context<'a, Node> {
         from_json_result(dsl::Model::try_from(&json))
       })
     })
-  }
-}
-
-#[cfg(test)]
-mod tests {
-  use super::*;
-  use uuid::Uuid;
-  use semver::Version;
-
-  pub trait Transformer: OpNode {
-    fn name(&self) -> &str;
-    fn model(&self) -> &Any;
-    fn create_shape(&self) -> dsl::Shape;
-    fn create_node(&self) -> dsl::Node {
-      dsl::Node::new(self.name().to_string(), self.create_shape())
-    }
-  }
-
-  #[derive(Clone)]
-  pub struct LinearRegressionModel {
-    intercept: f32
-  }
-  pub struct LinearRegression {
-    name: String,
-    features_col: String,
-    prediction_col: String,
-    model: LinearRegressionModel,
-  }
-  pub struct LinearRegressionOp { }
-  impl OpNode for LinearRegression { }
-
-  impl Transformer for LinearRegression {
-    fn name(&self) -> &str { &self.name }
-    fn model(&self) -> &Any { &self.model as &Any }
-
-    fn create_shape(&self) -> dsl::Shape {
-      dsl::Shape::new(vec![dsl::Socket::new(self.features_col.clone(), String::from("feautres"))],
-      vec![dsl::Socket::new(self.prediction_col.clone(), String::from("prediction"))])
-    }
-  }
-
-  impl OpNode for Box<Transformer> {
-    fn type_id(&self) -> TypeId { Transformer::type_id(self.as_ref()) }
-  }
-
-  impl Op for LinearRegressionOp {
-    type Node = Box<Transformer>;
-
-    fn type_id(&self) -> TypeId { TypeId::of::<LinearRegression>() }
-    fn op(&self) -> &'static str { "my_node" }
-
-    fn name<'a>(&self, node: &'a Self::Node) -> &'a str { node.name() }
-
-    fn model<'a>(&self, node: &'a Self::Node) -> &'a Any { Transformer::model(node.as_ref()) }
-
-    fn store_model(&self,
-                   obj: &Any,
-                   model: &mut dsl::Model,
-                   ctx: &Context<Self::Node>) -> Result<()> {
-      obj.downcast_ref::<LinearRegressionModel>().map(|lr| {
-        model.with_attr("intercept", dsl::Attribute::Basic(dsl::BasicValue::Float(lr.intercept)));
-        Ok(())
-      }).unwrap_or_else(|| Err(Error::InvalidOp("Expected a LinearRegressionModel".to_string())))
-    }
-
-    fn load_model(&self,
-                  model: &dsl::Model,
-                  ctx: &Context<Self::Node>) -> Result<Box<Any>> {
-      model.get_attr("intercept").and_then(|ai| {
-        match ai {
-          &dsl::Attribute::Basic(dsl::BasicValue::Float(i)) => {
-            Some(LinearRegressionModel {
-              intercept: i
-            })
-          },
-          _ => None
-        }
-      }).map(|x| Ok(Box::new(x) as Box<Any>)).unwrap_or_else(|| Err(Error::InvalidModel("".to_string())))
-    }
-
-    fn node(&self, node: &Self::Node, ctx: &Context<Self::Node>) -> dsl::Node {
-      node.create_node()
-    }
-
-    fn load(&self,
-            node: &dsl::Node,
-            model: Box<Any>,
-            ctx: &Context<Self::Node>) -> Result<Self::Node> {
-      model.downcast_ref::<LinearRegressionModel>().and_then(|lr| {
-        node.shape().get_io("features", "prediction").map(|(i, o)| {
-          LinearRegression {
-            name: node.name().to_string(),
-            features_col: i.name().to_string(),
-            prediction_col: o.name().to_string(),
-            model: lr.clone()
-          }
-        })
-      }).map(|x| Ok(Box::new(x) as Box<Transformer>)).
-      unwrap_or_else(|| Err(Error::DowncastError(String::from(""))))
-    }
-  }
-  const LINEAR_REGRESSION_OP: &LinearRegressionOp = &LinearRegressionOp { };
-
-  #[test]
-  fn bundle_serializer_test() {
-    let mut registry: Registry<Box<Transformer>> = Registry::new();
-    registry.insert_op(LINEAR_REGRESSION_OP);
-    let builder = FileBuilder::new("/tmp/test-rs").unwrap();
-    let context = Context::new(Box::new(builder), &registry);
-
-    let bundle = dsl::Bundle::new(Uuid::new_v4(),
-    "hello".to_string(),
-    dsl::Format::Mixed,
-    Version::parse("0.6.0-SNAPSHOT").unwrap());
-
-    let lrm = LinearRegressionModel { intercept: 42.0 };
-    let root = Box::new(LinearRegression {
-      name: String::from("my_lr"),
-      features_col: String::from("features"),
-      prediction_col: String::from("prediction"),
-      model: lrm
-    }) as Box<Transformer>;
-
-    context.write_bundle(&bundle, &root).unwrap();
   }
 }

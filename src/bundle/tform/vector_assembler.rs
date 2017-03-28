@@ -5,6 +5,8 @@ use bundle::ser::*;
 use bundle::frame;
 use bundle::dsl;
 
+pub const OP: &VectorAssemblerOp = &VectorAssemblerOp { };
+
 pub struct VectorAssemblerModel { }
 
 pub struct VectorAssembler {

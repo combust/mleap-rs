@@ -5,6 +5,8 @@ use bundle::ser::*;
 use super::frame;
 use super::dsl;
 
+pub const OP: &PipelineOp = &PipelineOp { };
+
 pub struct PipelineModel {
   children: Vec<Box<DefaultNode>>
 }
@@ -59,7 +61,7 @@ impl Op for PipelineOp {
 
       for child in pipeline.children.iter() {
         let n_name = format!("{}.node", child.name());
-        let r = ctx.next(&n_name).and_then(|ctx| ctx.write_node_and_model(child));
+        let r = ctx.try_next(&n_name).and_then(|ctx| ctx.write_node_and_model(child));
 
         match r {
           Ok(_) => { }, // do nothing
@@ -80,7 +82,7 @@ impl Op for PipelineOp {
 
       for name in children.iter() {
         let n_name = format!("{}.node", name);
-        let r = ctx.next(&n_name).and_then(|ctx| ctx.read_node());
+        let r = ctx.try_next(&n_name).and_then(|ctx| ctx.read_node());
 
         match r {
           Ok(c_node) => c_nodes.push(c_node),

@@ -6,6 +6,8 @@ use bundle::ser::*;
 use bundle::frame;
 use bundle::dsl;
 
+pub const OP: &StringIndexerOp = &StringIndexerOp { };
+
 #[derive(Clone)]
 pub struct StringIndexerModel {
   labels: Vec<String>,

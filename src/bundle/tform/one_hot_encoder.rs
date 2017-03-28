@@ -5,6 +5,8 @@ use bundle::tform::{self, DefaultNode};
 use bundle::frame;
 use bundle::dsl;
 
+pub const OP: &OneHotEncoderOp = &OneHotEncoderOp { };
+
 pub struct OneHotEncoderModel {
   size: usize
 }

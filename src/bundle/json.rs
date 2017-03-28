@@ -61,9 +61,12 @@ impl<'a> From<&'a dsl::Attribute> for Value {
         tmap.insert(String::from("dimensions"), Value::from(d));
         tmap.insert(String::from("values"), v);
 
+        let mut ttmap = Map::with_capacity(2);
+        ttmap.insert(String::from("type"), Value::from("tensor"));
+        ttmap.insert(String::from("base"), Value::from(b));
+
         let mut map = Map::with_capacity(3);
-        map.insert(String::from("type"), Value::from("tensor"));
-        map.insert(String::from("base"), Value::from(b));
+        map.insert(String::from("type"), Value::Object(ttmap));
         map.insert(String::from("value"), Value::Object(tmap));
 
         Value::Object(map)
@@ -214,75 +217,86 @@ impl<'a> TryFrom<&'a Value> for dsl::Attribute {
 
   fn try_from(value: &'a Value) -> Result<Self, Self::Err> {
     value.as_object().and_then(|map| {
-      map.get("type").and_then(|v| v.as_str()).and_then(|tpe| {
-        match tpe.as_ref() {
-          "tensor" => {
-            match (map.get("base"), map.get("value")) {
-              (Some(&Value::String(ref base)), Some(tensor)) => {
-                tensor.as_object().and_then(|tmap| {
-                  match (tmap.get("dimensions"), tmap.get("values")) {
-                    (Some(jdims), Some(jvalues)) => {
-                      let r = Vec::<usize>::try_from(jdims).and_then(|dims| {
-                        (match base.as_ref() {
-                          "bool" => Vec::<bool>::try_from(jvalues).map(|v| dsl::TensorValue::Bool(dsl::DenseTensor::new(dims, v))),
-                          "string" => Vec::<String>::try_from(jvalues).map(|v| dsl::TensorValue::String(dsl::DenseTensor::new(dims, v))),
-                          "byte" => Vec::<i8>::try_from(jvalues).map(|v| dsl::TensorValue::Byte(dsl::DenseTensor::new(dims, v))),
-                          "short" => Vec::<i16>::try_from(jvalues).map(|v| dsl::TensorValue::Short(dsl::DenseTensor::new(dims, v))),
-                          "int" => Vec::<i32>::try_from(jvalues).map(|v| dsl::TensorValue::Int(dsl::DenseTensor::new(dims, v))),
-                          "long" => Vec::<i64>::try_from(jvalues).map(|v| dsl::TensorValue::Long(dsl::DenseTensor::new(dims, v))),
-                          "float" => Vec::<f32>::try_from(jvalues).map(|v| dsl::TensorValue::Float(dsl::DenseTensor::new(dims, v))),
-                          "double" => Vec::<f64>::try_from(jvalues).map(|v| dsl::TensorValue::Double(dsl::DenseTensor::new(dims, v))),
-                          _ => Err(Error::ReadError("".to_string()))
-                        })
-                      }).map(|t| dsl::Attribute::Tensor(t));
+      map.get("type").and_then(|tpe| {
+        match tpe {
+          &Value::String(ref basic) => {
+            map.get("value").and_then(|value| {
+              match basic.as_ref() {
+                "bool" => value.as_bool().map(|v| Ok(basic_attribute(dsl::BasicValue::Bool(v)))),
+                "string" => value.as_str().map(|v| Ok(basic_attribute(dsl::BasicValue::String(v.to_string())))),
+                "byte" => value.as_i64().map(|v| Ok(basic_attribute(dsl::BasicValue::Byte(v as i8)))),
+                "short" => value.as_i64().map(|v| Ok(basic_attribute(dsl::BasicValue::Short(v as i16)))),
+                "int" => value.as_i64().map(|v| Ok(basic_attribute(dsl::BasicValue::Int(v as i32)))),
+                "long" => value.as_i64().map(|v| Ok(basic_attribute(dsl::BasicValue::Long(v)))),
+                "float" => value.as_f64().map(|v| Ok(basic_attribute(dsl::BasicValue::Float(v as f32)))),
+                "double" => value.as_f64().map(|v| Ok(basic_attribute(dsl::BasicValue::Double(v)))),
+                "byte_string" => {
+                  value.as_str().map(|v64| {
+                    base64::decode(v64).
+                      map(|v| basic_attribute(dsl::BasicValue::ByteString(v))).
+                      map_err(|_| Error::ReadError("Invalid base64 string".to_string()))
+                  })
+                },
+                _ => Some(Err(Error::ReadError(String::from("Invalid basic type"))))
+              }
+            })
+          },
+          &Value::Object(ref tmap) => {
+            tmap.get("type").and_then(|x| x.as_str()).and_then(|ttpe| {
+              match ttpe {
+                "tensor" => {
+                  tmap.get("tensor").and_then(|x| x.as_object()).and_then(|x| x.get("base")).and_then(|x| x.as_str()).and_then(|base| {
+                    map.get("value").and_then(|x| x.as_object()).and_then(|tmap| {
+                      match (tmap.get("dimensions"), tmap.get("values")) {
+                        (Some(jdims), Some(jvalues)) => {
+                          let r = Vec::<usize>::try_from(jdims).and_then(|dims| {
+                            (match base.as_ref() {
+                              "bool" => Vec::<bool>::try_from(jvalues).map(|v| dsl::TensorValue::Bool(dsl::DenseTensor::new(dims, v))),
+                              "string" => Vec::<String>::try_from(jvalues).map(|v| dsl::TensorValue::String(dsl::DenseTensor::new(dims, v))),
+                              "byte" => Vec::<i8>::try_from(jvalues).map(|v| dsl::TensorValue::Byte(dsl::DenseTensor::new(dims, v))),
+                              "short" => Vec::<i16>::try_from(jvalues).map(|v| dsl::TensorValue::Short(dsl::DenseTensor::new(dims, v))),
+                              "int" => Vec::<i32>::try_from(jvalues).map(|v| dsl::TensorValue::Int(dsl::DenseTensor::new(dims, v))),
+                              "long" => Vec::<i64>::try_from(jvalues).map(|v| dsl::TensorValue::Long(dsl::DenseTensor::new(dims, v))),
+                              "float" => Vec::<f32>::try_from(jvalues).map(|v| dsl::TensorValue::Float(dsl::DenseTensor::new(dims, v))),
+                              "double" => Vec::<f64>::try_from(jvalues).map(|v| dsl::TensorValue::Double(dsl::DenseTensor::new(dims, v))),
+                              _ => Err(Error::ReadError("Invalid base for tensor".to_string()))
+                            })
+                          }).map(|t| dsl::Attribute::Tensor(t));
+                          Some(r)
+                        },
+                        _ => Some(Err(Error::ReadError(String::from("Missing dimensions or values from tensor"))))
+                      }
+                    })
+                  })
+                },
+                "list" => {
+                  match (map.get("base"), map.get("value")) {
+                    (Some(&Value::String(ref base)), Some(jvalues)) => {
+                      let r = (match base.as_ref() {
+                        "bool" => Vec::<bool>::try_from(jvalues).map(|v| dsl::VectorValue::Bool(v)),
+                        "string" => Vec::<String>::try_from(jvalues).map(|v| dsl::VectorValue::String(v)),
+                        "byte" => Vec::<i8>::try_from(jvalues).map(|v| dsl::VectorValue::Byte(v)),
+                        "short" => Vec::<i16>::try_from(jvalues).map(|v| dsl::VectorValue::Short(v)),
+                        "int" => Vec::<i32>::try_from(jvalues).map(|v| dsl::VectorValue::Int(v)),
+                        "long" => Vec::<i64>::try_from(jvalues).map(|v| dsl::VectorValue::Long(v)),
+                        "float" => Vec::<f32>::try_from(jvalues).map(|v| dsl::VectorValue::Float(v)),
+                        "double" => Vec::<f64>::try_from(jvalues).map(|v| dsl::VectorValue::Double(v)),
+                        _ => Err(Error::ReadError("".to_string()))
+                      }).map(|values| dsl::Attribute::Array(values));
+
                       Some(r)
                     },
                     _ => None
                   }
-                })
-              },
-              _ => None
-            }
-          },
-          "list" => {
-            match (map.get("base"), map.get("value")) {
-              (Some(&Value::String(ref base)), Some(jvalues)) => {
-                let r = (match base.as_ref() {
-                  "bool" => Vec::<bool>::try_from(jvalues).map(|v| dsl::VectorValue::Bool(v)),
-                  "string" => Vec::<String>::try_from(jvalues).map(|v| dsl::VectorValue::String(v)),
-                  "byte" => Vec::<i8>::try_from(jvalues).map(|v| dsl::VectorValue::Byte(v)),
-                  "short" => Vec::<i16>::try_from(jvalues).map(|v| dsl::VectorValue::Short(v)),
-                  "int" => Vec::<i32>::try_from(jvalues).map(|v| dsl::VectorValue::Int(v)),
-                  "long" => Vec::<i64>::try_from(jvalues).map(|v| dsl::VectorValue::Long(v)),
-                  "float" => Vec::<f32>::try_from(jvalues).map(|v| dsl::VectorValue::Float(v)),
-                  "double" => Vec::<f64>::try_from(jvalues).map(|v| dsl::VectorValue::Double(v)),
-                  _ => Err(Error::ReadError("".to_string()))
-                }).map(|values| dsl::Attribute::Array(values));
-
-                Some(r)
-              },
-              _ => None
-            }
-          },
-          "bool" => value.as_bool().map(|v| Ok(basic_attribute(dsl::BasicValue::Bool(v)))),
-          "string" => value.as_str().map(|v| Ok(basic_attribute(dsl::BasicValue::String(v.to_string())))),
-          "byte" => value.as_i64().map(|v| Ok(basic_attribute(dsl::BasicValue::Byte(v as i8)))),
-          "short" => value.as_i64().map(|v| Ok(basic_attribute(dsl::BasicValue::Short(v as i16)))),
-          "int" => value.as_i64().map(|v| Ok(basic_attribute(dsl::BasicValue::Int(v as i32)))),
-          "long" => value.as_i64().map(|v| Ok(basic_attribute(dsl::BasicValue::Long(v)))),
-          "float" => value.as_f64().map(|v| Ok(basic_attribute(dsl::BasicValue::Float(v as f32)))),
-          "double" => value.as_f64().map(|v| Ok(basic_attribute(dsl::BasicValue::Double(v)))),
-          "byte_string" => {
-            value.as_str().map(|v64| {
-              base64::decode(v64).
-                map(|v| basic_attribute(dsl::BasicValue::ByteString(v))).
-                map_err(|_| Error::ReadError("Invalid base64 string".to_string()))
+                },
+                _ => None
+              }
             })
           },
           _ => None
         }
       })
-    }).unwrap_or_else(|| Err(Error::ReadError("".to_string())))
+    }).unwrap_or_else(|| Err(Error::ReadError(value.to_string())))
   }
 }
 
