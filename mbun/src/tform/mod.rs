@@ -1,6 +1,7 @@
 pub mod linear_regression;
 pub mod string_indexer;
 pub mod vector_assembler;
+pub mod one_hot_encoder;
 pub mod pipeline;
 
 use std::any::{Any, TypeId};

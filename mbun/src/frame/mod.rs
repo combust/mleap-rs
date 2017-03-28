@@ -93,6 +93,13 @@ impl Col {
     }
   }
 
+  pub fn from_long_tensors(name: String, v: Vec<DenseTensor<i64>>) -> Col {
+    Col {
+      name: name,
+      data: ColData::LongTensor(v)
+    }
+  }
+
   pub fn name(&self) -> &str { &self.name }
   pub fn data(&self) -> &ColData { &self.data }
 

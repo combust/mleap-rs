@@ -182,6 +182,15 @@ impl Model {
     })
   }
 
+  pub fn get_long(&self, name: &str) -> Option<i64> {
+    self.attributes.get(name).and_then(|x| {
+      match x {
+        &Attribute::Basic(BasicValue::Long(i)) => Some(i),
+        _ => None
+      }
+    })
+  }
+
   pub fn get_double_tensor(&self, name: &str) -> Option<&DenseTensor<f64>> {
     self.attributes.get(name).and_then(|x| {
       match x {
