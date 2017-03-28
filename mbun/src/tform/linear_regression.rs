@@ -4,7 +4,6 @@ use tform::{self, DefaultNode};
 use frame;
 use dsl;
 
-#[derive(Clone)]
 pub struct LinearRegressionModel {
   coefficients: dsl::DenseTensor<f64>,
   intercept: f64
@@ -91,17 +90,18 @@ impl Op for LinearRegressionOp {
           node: &dsl::Node,
           model: Box<Any>,
           _ctx: &Context<Self::Node>) -> Result<Self::Node> {
-    model.downcast_ref::<LinearRegressionModel>().and_then(|lr| {
-      node.shape().get_io("features", "prediction").map(|(i, o)| {
-        LinearRegression {
+    model.downcast::<LinearRegressionModel>().
+      map_err(|_| Error::DowncastError(String::from(""))).
+      and_then(|lr| {
+      node.shape().get_io("features", "prediction").map(move |(i, o)| {
+        Ok(Box::new(LinearRegression {
           name: node.name().to_string(),
           features_col: i.name().to_string(),
           prediction_col: o.name().to_string(),
-          model: lr.clone()
-        }
-      })
-    }).map(|x| Ok(Box::new(x) as Box<DefaultNode>)).
-    unwrap_or_else(|| Err(Error::DowncastError(String::from(""))))
+          model: *lr
+        }) as Box<DefaultNode>)
+      }).unwrap_or_else(|| Err(Error::InvalidOp(String::from(""))))
+    })
   }
 }
 

@@ -181,15 +181,19 @@ impl<'a, Node: OpNode + 'a> Context<'a, Node> {
           and_then(|_| {
             self.next("root").
               and_then(|ctx| {
-                ctx.registry.try_op_for_node(root).and_then(|op| {
-                  ctx.write_node(root, *op).and_then(|_| {
-                    let model = op.model(root);
-                    ctx.write_model(model, *op)
-                  })
-                })
+                ctx.write_node_and_model(root)
               })
           })
       })
+  }
+
+  pub fn write_node_and_model(&self, node: &Node) -> Result<()> {
+    self.registry.try_op_for_node(node).and_then(|op| {
+      self.write_node(node, *op).and_then(|_| {
+        let model = op.model(node);
+        self.write_model(model, *op)
+      })
+    })
   }
 
   fn write_node(&self, node: &Node, op: &Op<Node=Node>) -> Result<()> {
@@ -221,15 +225,19 @@ impl<'a, Node: OpNode + 'a> Context<'a, Node> {
       from_serde_json_result(serde_json::from_reader(r)).and_then(|json: Value| {
         from_json_result(dsl::Bundle::try_from(&json)).and_then(|bundle| {
           self.next("root").and_then(|ctx| {
-            ctx.read_dsl_model().and_then(|d_model| {
-              ctx.registry.try_op_for_name(d_model.op()).and_then(|op| {
-                op.load_model(&d_model, self).and_then(|model| {
-                  ctx.read_dsl_node().and_then(|d_node| {
-                    op.load(&d_node, model, self).map(|node| (bundle, node))
-                  })
-                })
-              })
-            })
+            ctx.read_node().map(|node| (bundle, node))
+          })
+        })
+      })
+    })
+  }
+
+  pub fn read_node(&self) -> Result<Node> {
+    self.read_dsl_model().and_then(|d_model| {
+      self.registry.try_op_for_name(d_model.op()).and_then(|op| {
+        op.load_model(&d_model, self).and_then(|model| {
+          self.read_dsl_node().and_then(|d_node| {
+            op.load(&d_node, model, self)
           })
         })
       })

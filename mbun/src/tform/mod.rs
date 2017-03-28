@@ -1,6 +1,7 @@
 pub mod linear_regression;
 pub mod string_indexer;
 pub mod vector_assembler;
+pub mod pipeline;
 
 use std::any::{Any, TypeId};
 use ser::OpNode;

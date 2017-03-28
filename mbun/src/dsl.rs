@@ -120,6 +120,13 @@ impl Shape {
     }
   }
 
+  pub fn empty() -> Shape {
+    Shape {
+      inputs: vec![],
+      outputs: vec![]
+    }
+  }
+
   pub fn with_standard_io(input: String, output: String) -> Shape {
     Shape {
       inputs: vec![Socket::new(input, String::from("input"))],
