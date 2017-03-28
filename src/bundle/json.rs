@@ -24,7 +24,7 @@ impl<'a> From<&'a dsl::Attribute> for Value {
     match value {
       &dsl::Attribute::Basic(ref basic) => {
         let (t, v) = match basic {
-          &dsl::BasicValue::Bool(v) => ("bool", Value::from(v)),
+          &dsl::BasicValue::Bool(v) => ("boolean", Value::from(v)),
           &dsl::BasicValue::String(ref v) => ("string", Value::from(v.as_str())),
           &dsl::BasicValue::Byte(v) => ("byte", Value::from(v)),
           &dsl::BasicValue::Short(v) => ("short", Value::from(v)),
@@ -43,7 +43,7 @@ impl<'a> From<&'a dsl::Attribute> for Value {
       },
       &dsl::Attribute::Tensor(ref tv) => {
         let (b, d, v) = match tv {
-          &dsl::TensorValue::Bool(ref v) => ("bool", v.dimensions(), Value::from(v.values())),
+          &dsl::TensorValue::Bool(ref v) => ("boolean", v.dimensions(), Value::from(v.values())),
           &dsl::TensorValue::String(ref v) => ("string", v.dimensions(), Value::from(v.values())),
           &dsl::TensorValue::Byte(ref v) => ("byte", v.dimensions(), Value::from(v.values())),
           &dsl::TensorValue::Short(ref v) => ("short", v.dimensions(), Value::from(v.values())),
@@ -73,7 +73,7 @@ impl<'a> From<&'a dsl::Attribute> for Value {
       },
       &dsl::Attribute::Array(ref values) => {
         let (b, v) = match values {
-          &dsl::VectorValue::Bool(ref v) => ("bool", Value::from(v.as_slice())),
+          &dsl::VectorValue::Bool(ref v) => ("boolean", Value::from(v.as_slice())),
           &dsl::VectorValue::String(ref v) => ("string", Value::from(v.as_slice())),
           &dsl::VectorValue::Byte(ref v) => ("byte", Value::from(v.as_slice())),
           &dsl::VectorValue::Short(ref v) => ("short", Value::from(v.as_slice())),
@@ -222,7 +222,7 @@ impl<'a> TryFrom<&'a Value> for dsl::Attribute {
           &Value::String(ref basic) => {
             map.get("value").and_then(|value| {
               match basic.as_ref() {
-                "bool" => value.as_bool().map(|v| Ok(basic_attribute(dsl::BasicValue::Bool(v)))),
+                "boolean" => value.as_bool().map(|v| Ok(basic_attribute(dsl::BasicValue::Bool(v)))),
                 "string" => value.as_str().map(|v| Ok(basic_attribute(dsl::BasicValue::String(v.to_string())))),
                 "byte" => value.as_i64().map(|v| Ok(basic_attribute(dsl::BasicValue::Byte(v as i8)))),
                 "short" => value.as_i64().map(|v| Ok(basic_attribute(dsl::BasicValue::Short(v as i16)))),
@@ -251,7 +251,7 @@ impl<'a> TryFrom<&'a Value> for dsl::Attribute {
                         (Some(jdims), Some(jvalues)) => {
                           let r = Vec::<usize>::try_from(jdims).and_then(|dims| {
                             (match base.as_ref() {
-                              "bool" => Vec::<bool>::try_from(jvalues).map(|v| dsl::TensorValue::Bool(dsl::DenseTensor::new(dims, v))),
+                              "boolean" => Vec::<bool>::try_from(jvalues).map(|v| dsl::TensorValue::Bool(dsl::DenseTensor::new(dims, v))),
                               "string" => Vec::<String>::try_from(jvalues).map(|v| dsl::TensorValue::String(dsl::DenseTensor::new(dims, v))),
                               "byte" => Vec::<i8>::try_from(jvalues).map(|v| dsl::TensorValue::Byte(dsl::DenseTensor::new(dims, v))),
                               "short" => Vec::<i16>::try_from(jvalues).map(|v| dsl::TensorValue::Short(dsl::DenseTensor::new(dims, v))),
@@ -270,10 +270,10 @@ impl<'a> TryFrom<&'a Value> for dsl::Attribute {
                   })
                 },
                 "list" => {
-                  match (map.get("base"), map.get("value")) {
+                  match (tmap.get("base"), map.get("value")) {
                     (Some(&Value::String(ref base)), Some(jvalues)) => {
                       let r = (match base.as_ref() {
-                        "bool" => Vec::<bool>::try_from(jvalues).map(|v| dsl::VectorValue::Bool(v)),
+                        "boolean" => Vec::<bool>::try_from(jvalues).map(|v| dsl::VectorValue::Bool(v)),
                         "string" => Vec::<String>::try_from(jvalues).map(|v| dsl::VectorValue::String(v)),
                         "byte" => Vec::<i8>::try_from(jvalues).map(|v| dsl::VectorValue::Byte(v)),
                         "short" => Vec::<i16>::try_from(jvalues).map(|v| dsl::VectorValue::Short(v)),
@@ -376,7 +376,10 @@ impl<'a> From<&'a dsl::Model> for Value {
 
     let mut map = Map::with_capacity(2);
     map.insert(String::from("op"), Value::from(value.op()));
-    map.insert(String::from("attributes"), Value::from(attrs));
+
+    if attrs.len() > 0 {
+      map.insert(String::from("attributes"), Value::from(attrs));
+    }
 
     Value::Object(map)
   }
@@ -396,6 +399,9 @@ impl<'a> TryFrom<&'a Value> for dsl::Model {
             dsl::Model::new(op.to_string(), attrs)
           });
           Some(r)
+        },
+        (Some(op), None) => {
+          Some(Ok(dsl::Model::new(op.to_string(), HashMap::new())))
         },
         _ => None
       }

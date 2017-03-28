@@ -23,10 +23,8 @@ mod test {
     let ctx = ser::Context::new(Box::new(builder), &registry);
     let bundle = ctx.read_dsl_bundle().unwrap();
     let ctx2 = ctx.try_next("root/linear_regression.node").unwrap();
-    let op = ctx.registry().try_op_for_name("linear_regression").unwrap();
-    let dsl_model = ctx2.read_dsl_model().unwrap();
-    let model = op.load_model(&dsl_model, &ctx2).unwrap();
+    let node = ctx2.read_node();
 
-    println!("{:?}", &dsl_model);
+    //println!("{:?}", &dsl_model);
   }
 }
