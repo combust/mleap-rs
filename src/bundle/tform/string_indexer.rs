@@ -1,9 +1,10 @@
 use std::any::*;
 use std::collections::HashMap;
-use tform::{self, DefaultNode};
-use ser::*;
-use frame;
-use dsl;
+
+use bundle::tform::{self, DefaultNode};
+use bundle::ser::*;
+use bundle::frame;
+use bundle::dsl;
 
 #[derive(Clone)]
 pub struct StringIndexerModel {

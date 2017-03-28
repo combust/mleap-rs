@@ -1,8 +1,9 @@
 use std::any::*;
-use tform::{self, DefaultNode};
-use ser::*;
-use frame;
-use dsl;
+
+use bundle::tform::{self, DefaultNode};
+use bundle::ser::*;
+use bundle::frame;
+use bundle::dsl;
 
 pub struct VectorAssemblerModel { }
 

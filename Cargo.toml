@@ -1,6 +1,28 @@
-[workspace]
-members = [
-  "mleap-core",
-  "mleap-tensor",
-  "mbun"
-]
+[package]
+name = "mleap"
+version = "0.1.0"
+authors = ["Hollin Wilkins <hollinrwilkins@gmail.com>"]
+
+[dependencies]
+uuid = { version = "0.4", features = ["v4"] }
+semver = "0.6.0"
+zip = "0.2"
+serde = "0.9.11"
+serde_json = "0.9.9"
+base64 = "0.4.0"
+rand = "0.3"
+
+[dependencies.blas-sys]
+version = "0.6.6"
+default-features = false
+features = ["accelerate"]
+
+[features]
+default = []
+
+[profile.release]
+debug = true
+
+[profile.bench]
+opt-level = 3
+debug = true

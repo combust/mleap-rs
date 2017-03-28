@@ -1,6 +1,0 @@
-[package]
-name = "mleap-core"
-version = "0.1.0"
-authors = ["Hollin Wilkins <hollinrwilkins@gmail.com>"]
-
-[dependencies]

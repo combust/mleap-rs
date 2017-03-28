@@ -1,6 +1,7 @@
 use std::result;
 use std::collections::HashMap;
-use dsl::DenseTensor;
+
+use bundle::dsl::DenseTensor;
 
 pub enum Error {
   TransformError(String),

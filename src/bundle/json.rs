@@ -5,7 +5,7 @@ use std::result::Result;
 use uuid::Uuid;
 use semver::Version;
 use base64;
-use dsl;
+use super::dsl;
 
 #[derive(Debug, Clone)]
 pub enum Error {

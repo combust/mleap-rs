@@ -5,9 +5,10 @@ pub mod one_hot_encoder;
 pub mod pipeline;
 
 use std::any::{Any, TypeId};
-use ser::OpNode;
-use frame;
-use dsl;
+
+use bundle::ser::OpNode;
+use bundle::frame;
+use bundle::dsl;
 
 pub trait DefaultNode: OpNode + frame::Transformer {
   fn name(&self) -> &str;

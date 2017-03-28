@@ -5,8 +5,8 @@ use std::fs;
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 use serde_json::{self, Value};
-use json::{self, TryFrom};
-use dsl;
+use super::json::{self, TryFrom};
+use super::dsl;
 
 #[derive(Debug)]
 pub enum Error {

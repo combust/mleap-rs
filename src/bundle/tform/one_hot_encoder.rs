@@ -1,8 +1,9 @@
-use ser::*;
 use std::any::*;
-use tform::{self, DefaultNode};
-use frame;
-use dsl;
+
+use bundle::ser::*;
+use bundle::tform::{self, DefaultNode};
+use bundle::frame;
+use bundle::dsl;
 
 pub struct OneHotEncoderModel {
   size: usize

@@ -1,8 +1,9 @@
-use ser::*;
 use std::any::*;
-use tform::{self, DefaultNode};
-use frame;
-use dsl;
+
+use bundle::tform::{self, DefaultNode};
+use bundle::ser::*;
+use super::frame;
+use super::dsl;
 
 pub struct PipelineModel {
   children: Vec<Box<DefaultNode>>
