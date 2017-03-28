@@ -76,7 +76,8 @@ impl VectorAssemblerModel {
         }
 
         // TODO: this to_vec is very inefficient
-        Ok(frame::ColData::DoubleTensor(vs.iter().map(|v| dsl::DenseTensor::new(vec![t_size], v.to_vec())).collect()))
+        let tensors = vs.drain(0..).map(|v| dsl::DenseTensor::new(vec![t_size], v)).collect();
+        Ok(frame::ColData::DoubleTensor(tensors))
       },
       Err(err) => return Err(err)
     }
