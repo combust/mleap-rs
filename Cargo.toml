@@ -10,16 +10,11 @@ zip = "0.2"
 serde = "0.9.11"
 serde_json = "0.9.9"
 base64 = "0.4.0"
-rand = "0.3"
 libc = "0.2"
+blas-sys = { version = "0.6.6", default-features = false }
 
-[dependencies.blas-sys]
-version = "0.6.6"
-default-features = false
-features = ["accelerate"]
-
-[features]
-default = []
+[lib]
+crate-type = ["staticlib"]
 
 [profile.release]
 debug = true
