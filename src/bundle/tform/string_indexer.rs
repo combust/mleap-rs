@@ -6,7 +6,7 @@ use bundle::ser::*;
 use bundle::frame;
 use bundle::dsl;
 
-pub const OP: &StringIndexerOp = &StringIndexerOp { };
+pub const OP: &'static StringIndexerOp = &StringIndexerOp { };
 
 #[derive(Clone)]
 pub struct StringIndexerModel {

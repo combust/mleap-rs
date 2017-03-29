@@ -1,6 +1,7 @@
 use bundle::*;
 use std::slice;
 use std::ffi;
+use std::os::raw::c_char;
 
 #[no_mangle]
 pub extern fn mleap_frame_with_size(c_size: usize) -> *mut frame::LeapFrame {
@@ -20,7 +21,7 @@ pub extern fn mleap_frame_with_doubles(c_frame: *mut frame::LeapFrame,
                                        c_name: *const i8,
                                        c_values: *const f64) {
   unsafe {
-    let mut frame: Box<frame::LeapFrame> = Box::from_raw(c_frame);
+    let frame = c_frame.as_mut().unwrap();
     let name = c_string_to_rust(c_name);
     let values = slice::from_raw_parts(c_values, frame.size()).to_vec();
     frame.try_with_doubles(name, values).unwrap();
@@ -32,10 +33,9 @@ pub extern fn mleap_frame_with_strings(c_frame: *mut frame::LeapFrame,
                                        c_name: *const i8,
                                        c_values: *const *const i8) {
   unsafe {
-    let mut frame: Box<frame::LeapFrame> = Box::from_raw(c_frame);
+    let frame = c_frame.as_mut().unwrap();
     let name = c_string_to_rust(c_name);
     let values: Vec<String> = slice::from_raw_parts(c_values, frame.size()).iter().map(|s| {
-      println!("PTR: {:?}", *s);
       c_string_to_rust(*s)
     }).collect();
     frame.try_with_strings(name, values).unwrap();
@@ -73,16 +73,16 @@ pub extern fn mleap_transformer_free(c_transformer: *mut Box<tform::DefaultNode>
 pub extern fn mleap_transform(c_transformer: *mut Box<tform::DefaultNode>,
                               c_frame: *mut frame::LeapFrame) {
   unsafe {
-    let transformer = Box::from_raw(c_transformer);
-    let mut frame = Box::from_raw(c_frame);
+    let transformer = c_transformer.as_ref().unwrap();
+    let frame = c_frame.as_mut().unwrap();
 
-    transformer.transform(frame.as_mut()).unwrap();
+    transformer.transform(frame).unwrap();
   }
 }
 
-fn c_string_to_rust(null_terminated_string: *const i8) -> String {
+pub fn c_string_to_rust(null_terminated_string: *const c_char) -> String {
   unsafe {
-    let c_str: &ffi::CStr = ffi::CStr::from_ptr(null_terminated_string);
+    let c_str = ffi::CStr::from_ptr(null_terminated_string);
     String::from(c_str.to_str().unwrap())
   }
 }

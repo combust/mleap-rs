@@ -16,6 +16,7 @@ pub trait Transformer {
   fn transform(&self, frame: &mut LeapFrame) -> Result<()>;
 }
 
+#[derive(Debug)]
 pub enum ColData {
   Bool(Vec<bool>),
   String(Vec<String>),
@@ -48,11 +49,13 @@ pub enum ColData {
   ByteStringTensor(Vec<DenseTensor<Vec<u8>>>)
 }
 
+#[derive(Debug)]
 pub struct Col {
   name: String,
   data: ColData
 }
 
+#[derive(Debug)]
 pub struct LeapFrame {
   size: usize,
   cols: Vec<Col>,

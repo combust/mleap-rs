@@ -5,7 +5,7 @@ use bundle::ser::*;
 use bundle::frame;
 use bundle::dsl;
 
-pub const OP: &StandardScalerOp = &StandardScalerOp { };
+pub const OP: &'static StandardScalerOp = &StandardScalerOp { };
 
 pub struct StandardScalerModel {
   mean: Option<dsl::DenseTensor<f64>>,

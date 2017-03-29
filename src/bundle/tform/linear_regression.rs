@@ -5,7 +5,7 @@ use bundle::ser::*;
 use bundle::frame;
 use bundle::dsl;
 
-pub const OP: &LinearRegressionOp = &LinearRegressionOp { };
+pub const OP: &'static LinearRegressionOp = &LinearRegressionOp { };
 
 pub struct LinearRegressionModel {
   coefficients: dsl::DenseTensor<f64>,

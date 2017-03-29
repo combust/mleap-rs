@@ -5,7 +5,7 @@ use bundle::ser::*;
 use super::frame;
 use super::dsl;
 
-pub const OP: &PipelineOp = &PipelineOp { };
+pub const OP: &'static PipelineOp = &PipelineOp { };
 
 pub struct PipelineModel {
   children: Vec<Box<DefaultNode>>

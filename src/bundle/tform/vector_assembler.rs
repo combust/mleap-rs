@@ -5,7 +5,7 @@ use bundle::ser::*;
 use bundle::frame;
 use bundle::dsl;
 
-pub const OP: &VectorAssemblerOp = &VectorAssemblerOp { };
+pub const OP: &'static VectorAssemblerOp = &VectorAssemblerOp { };
 
 pub struct VectorAssemblerModel { }
 
@@ -113,7 +113,7 @@ impl frame::Transformer for VectorAssembler {
   }
 }
 
-const MODEL: &VectorAssemblerModel = &VectorAssemblerModel { };
+const MODEL: &'static VectorAssemblerModel = &VectorAssemblerModel { };
 impl DefaultNode for VectorAssembler {
   fn name(&self) -> &str { &self.name }
   fn model(&self) -> &Any { MODEL as &Any }

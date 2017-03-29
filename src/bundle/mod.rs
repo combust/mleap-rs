@@ -47,7 +47,7 @@ mod test {
 
     let r = frame.get_doubles("price_prediction").and_then(|x| x.first()).unwrap();
 
-    println!("Price prediction is: {}", r);
+    assert_eq!(*r, 236.76099900182078);
   }
 
   #[test]
@@ -58,60 +58,75 @@ mod test {
     let c_transformer = c::mleap_transformer_load(c_path.as_ptr());
     let c_frame = c::mleap_frame_with_size(1);
 
-    let bathrooms = rust_to_c_string("bathrooms");
-    let bedrooms = rust_to_c_string("bedrooms");
-    let security_deposit = rust_to_c_string("security_deposit");
-    let cleaning_fee = rust_to_c_string("cleaning_fee");
-    let extra_people = rust_to_c_string("extra_people");
-    let number_of_reviews = rust_to_c_string("number_of_reviews");
-    let square_feet = rust_to_c_string("square_feet");
-    let review_scores_rating = rust_to_c_string("review_scores_rating");
+    let bathrooms = ffi::CString::new("bathrooms").unwrap();
+    let bedrooms = ffi::CString::new("bedrooms").unwrap();
+    let security_deposit = ffi::CString::new("security_deposit").unwrap();
+    let cleaning_fee = ffi::CString::new("cleaning_fee").unwrap();
+    let extra_people = ffi::CString::new("extra_people").unwrap();
+    let number_of_reviews = ffi::CString::new("number_of_reviews").unwrap();
+    let square_feet = ffi::CString::new("square_feet").unwrap();
+    let review_scores_rating = ffi::CString::new("review_scores_rating").unwrap();
 
-    c::mleap_frame_with_doubles(c_frame, bathrooms.as_ptr(), vec![2.0].as_ptr());
-    c::mleap_frame_with_doubles(c_frame, bedrooms.as_ptr(), vec![3.0].as_ptr());
-    c::mleap_frame_with_doubles(c_frame, security_deposit.as_ptr(), vec![50.0].as_ptr());
-    c::mleap_frame_with_doubles(c_frame, cleaning_fee.as_ptr(), vec![30.0].as_ptr());
-    c::mleap_frame_with_doubles(c_frame, extra_people.as_ptr(), vec![0.0].as_ptr());
-    c::mleap_frame_with_doubles(c_frame, number_of_reviews.as_ptr(), vec![23.0].as_ptr());
-    c::mleap_frame_with_doubles(c_frame, square_feet.as_ptr(), vec![1200.0].as_ptr());
-    c::mleap_frame_with_doubles(c_frame, review_scores_rating.as_ptr(), vec![93.0].as_ptr());
+    let bathrooms_doubles: Vec<f64> = vec![2.0];
+    let bedrooms_doubles: Vec<f64> = vec![3.0];
+    let security_deposit_doubles: Vec<f64> = vec![50.0];
+    let cleaning_fee_doubles: Vec<f64> = vec![30.0];
+    let extra_people_doubles: Vec<f64> = vec![0.0];
+    let number_of_reviews_doubles: Vec<f64> = vec![23.0];
+    let square_feet_doubles: Vec<f64> = vec![1200.0];
+    let review_scores_rating_doubles: Vec<f64> = vec![93.0];
+
+    bathrooms_doubles.as_ptr();
+    bedrooms_doubles.as_ptr();
+    security_deposit_doubles.as_ptr();
+    c::mleap_frame_with_doubles(c_frame, bathrooms.as_ptr(), bathrooms_doubles.as_ptr());
+    c::mleap_frame_with_doubles(c_frame, bedrooms.as_ptr(), bedrooms_doubles.as_ptr());
+    c::mleap_frame_with_doubles(c_frame, security_deposit.as_ptr(), security_deposit_doubles.as_ptr());
+    c::mleap_frame_with_doubles(c_frame, cleaning_fee.as_ptr(), cleaning_fee_doubles.as_ptr());
+    c::mleap_frame_with_doubles(c_frame, extra_people.as_ptr(), extra_people_doubles.as_ptr());
+    c::mleap_frame_with_doubles(c_frame, number_of_reviews.as_ptr(), number_of_reviews_doubles.as_ptr());
+    c::mleap_frame_with_doubles(c_frame, square_feet.as_ptr(), square_feet_doubles.as_ptr());
+    c::mleap_frame_with_doubles(c_frame, review_scores_rating.as_ptr(), review_scores_rating_doubles.as_ptr());
 
     let strict = ffi::CString::new("strict").unwrap();
     let s10 = ffi::CString::new("1.0").unwrap();
-    //let entire_home = ffi::CString::new("Entire home/apt").unwrap();
-    //let ny = ffi::CString::new("NY").unwrap();
+    let entire_home = ffi::CString::new("Entire home/apt").unwrap();
+    let ny = ffi::CString::new("NY").unwrap();
 
     let cp = vec![strict.as_ptr()];
     let his = vec![s10.as_ptr()];
-    //let ib = vec![s10.as_ptr()];
-    //let rt = vec![entire_home.as_ptr()];
-    //let state = vec![ny.as_ptr()];
+    let ib = vec![s10.as_ptr()];
+    let rt = vec![entire_home.as_ptr()];
+    let states = vec![ny.as_ptr()];
 
-    println!("WHy is this {:?}", strict.as_ptr());
-    println!("Different than this {:?}", *(cp.first().unwrap()));
+    let cancellation_policy = ffi::CString::new("cancellation_policy").unwrap();
+    let host_is_superhost = ffi::CString::new("host_is_superhost").unwrap();
+    let instant_bookable = ffi::CString::new("instant_bookable").unwrap();
+    let room_type = ffi::CString::new("room_type").unwrap();
+    let state = ffi::CString::new("state").unwrap();
 
-    //c::mleap_frame_with_strings(c_frame, rust_to_c_string("cancellation_policy").as_ptr(), cp.as_ptr());
-    //c::mleap_frame_with_strings(c_frame, rust_to_c_string("host_is_superhost").as_ptr(), his.as_ptr());
-    //c::mleap_frame_with_strings(c_frame, rust_to_c_string("instant_bookable").as_ptr(), ib.as_ptr());
-    //c::mleap_frame_with_strings(c_frame, rust_to_c_string("room_type").as_ptr(), rt.as_ptr());
-    //c::mleap_frame_with_strings(c_frame, rust_to_c_string("state").as_ptr(), state.as_ptr());
+    c::mleap_frame_with_strings(c_frame, cancellation_policy.as_ptr(), cp.as_ptr());
+    c::mleap_frame_with_strings(c_frame, host_is_superhost.as_ptr(), his.as_ptr());
+    c::mleap_frame_with_strings(c_frame, instant_bookable.as_ptr(), ib.as_ptr());
+    c::mleap_frame_with_strings(c_frame, room_type.as_ptr(), rt.as_ptr());
+    c::mleap_frame_with_strings(c_frame, state.as_ptr(), states.as_ptr());
 
-    //c::mleap_transform(c_transformer, c_frame);
+    c::mleap_transform(c_transformer, c_frame);
 
-    //node.transform(&mut frame).unwrap();
+    let frame = unsafe { c_frame.as_mut().unwrap() };
+    let r = frame.get_doubles("price_prediction").and_then(|x| x.first()).unwrap();
 
-    //let r = frame.get_doubles("price_prediction").and_then(|x| x.first()).unwrap();
+    assert_eq!(*r, 236.76099900182078);
 
-    //let frame = unsafe { Box::from_raw(c_frame) };
-    //let r = frame.get_doubles("price_prediction").and_then(|x| x.first()).unwrap();
-    //println!("Price prediction is: {}", r);
+    c::mleap_transformer_free(c_transformer);
+    c::mleap_frame_free(c_frame);
   }
 
   //fn rust_to_c_string_arr(s: &[String]) -> Vec<ffi::CString> {
     //s.iter().map(|x| rust_to_c_string(x)).collect()
   //}
 
-  fn rust_to_c_string<T: Into<Vec<u8>>>(s: T) -> ffi::CString {
-    ffi::CString::new(s).unwrap()
-  }
+  //fn rust_to_c_string<T: Into<Vec<u8>>>(s: T) -> ffi::CString {
+    //ffi::CString::new(s).unwrap()
+  //}
 }
