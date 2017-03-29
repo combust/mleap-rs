@@ -31,7 +31,7 @@ impl OneHotEncoderModel {
       &frame::ColData::Short(ref v) => self.try_encode(v, |x| x as usize),
       &frame::ColData::Int(ref v) => self.try_encode(v, |x| x as usize),
       &frame::ColData::Long(ref v) => self.try_encode(v, |x| x as usize),
-      _ => Err(frame::Error::TransformError(String::from("")))
+      _ => Err(frame::Error::TransformError(String::from("OneHotEncoder: Expecting numeric input")))
     }).map(|v| frame::ColData::LongTensor(v))
   }
 
@@ -47,7 +47,7 @@ impl OneHotEncoderModel {
           values[index] = 1;
           tensors.push(dsl::DenseTensor::new(vec![values.len()], values));
         } else {
-          return Err(frame::Error::TransformError(String::from("")))
+          tensors.push(dsl::DenseTensor::new(vec![values.len()], values));
         }
       }
 
