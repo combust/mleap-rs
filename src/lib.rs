@@ -4,7 +4,7 @@ extern crate serde;
 extern crate serde_json;
 extern crate base64;
 extern crate core;
-extern crate blas_sys;
+//extern crate blas_sys;
 extern crate libc;
 
 pub mod bundle;

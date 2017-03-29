@@ -12,7 +12,7 @@ mod test {
 
   #[test]
   fn test_airbnb() {
-    let path = "/Users/hollinwilkins/Workspace/scratch/criteo/model";
+    let path = "/tmp/model";
     let builder = ser::FileBuilder::try_new(path).unwrap();
     let mut registry = ser::Registry::new();
 
@@ -52,7 +52,7 @@ mod test {
 
   #[test]
   fn test_airbnb_c() {
-    let path = "/Users/hollinwilkins/Workspace/scratch/criteo/model";
+    let path = "/tmp/model";
     let c_path = ffi::CString::new(path).unwrap();
 
     let c_transformer = c::mleap_transformer_load(c_path.as_ptr());
@@ -121,12 +121,4 @@ mod test {
     c::mleap_transformer_free(c_transformer);
     c::mleap_frame_free(c_frame);
   }
-
-  //fn rust_to_c_string_arr(s: &[String]) -> Vec<ffi::CString> {
-    //s.iter().map(|x| rust_to_c_string(x)).collect()
-  //}
-
-  //fn rust_to_c_string<T: Into<Vec<u8>>>(s: T) -> ffi::CString {
-    //ffi::CString::new(s).unwrap()
-  //}
 }
