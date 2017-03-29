@@ -21,6 +21,7 @@ mod test {
     registry.insert_op(tform::one_hot_encoder::OP);
     registry.insert_op(tform::pipeline::OP);
     registry.insert_op(tform::vector_assembler::OP);
+    registry.insert_op(tform::standard_scaler::OP);
 
     let ctx = ser::Context::new(Box::new(builder), &registry);
     let bundle = ctx.read_dsl_bundle().unwrap();
