@@ -17,7 +17,9 @@ pub struct VectorAssembler {
 
 pub struct VectorAssemblerOp { }
 
-impl OpNode for VectorAssembler { }
+impl OpNode for VectorAssembler {
+  fn op(&self) -> &'static str { "vector_assembler" }
+}
 
 impl VectorAssemblerModel {
   pub fn try_assemble(col_names: &[String],
@@ -147,7 +149,7 @@ impl Op for VectorAssemblerOp {
   fn load_model(&self,
                 _model: &dsl::Model,
                 _ctx: &Context<Self::Node>) -> Result<Box<Any>> {
-    Ok(Box::new(VectorAssemblerModel { }))
+    Ok(Box::new(VectorAssemblerModel { }) as Box<Any>)
   }
 
   fn node(&self, node: &Self::Node, _ctx: &Context<Self::Node>) -> dsl::Node {

@@ -21,6 +21,7 @@ pub type Result<T> = result::Result<T, Error>;
 
 pub trait OpNode where Self: 'static {
   fn type_id(&self) -> TypeId { TypeId::of::<Self>() }
+  fn op(&self) -> &'static str;
 }
 
 pub trait Op {
@@ -118,11 +119,11 @@ impl<'a, Node: OpNode + 'a> Registry<'a, Node> {
   }
 
   pub fn try_op_for_name(&self, name: &str) -> Result<&& Op<Node=Node>> {
-    self.get_op_for_name(name).map(|n| Ok(n)).unwrap_or_else(|| Err(Error::InvalidOp("".to_string())))
+    self.get_op_for_name(name).map(|n| Ok(n)).unwrap_or_else(|| Err(Error::InvalidOp(format!("Op {} does not exist", name))))
   }
 
   pub fn try_op_for_node(&self, node: &Node) -> Result<&& Op<Node=Node>> {
-    self.get_op_for_node(node).map(|n| Ok(n)).unwrap_or_else(|| Err(Error::InvalidOp("".to_string())))
+    self.get_op_for_node(node).map(|n| Ok(n)).unwrap_or_else(|| Err(Error::InvalidOp(format!("Op {} does not exist", node.op()))))
   }
 }
 

@@ -42,7 +42,9 @@ impl StringIndexerModel {
     })
   }
 }
-impl OpNode for StringIndexer { }
+impl OpNode for StringIndexer {
+  fn op(&self) -> &'static str { "string_indexer" }
+}
 
 impl frame::Transformer for StringIndexer {
   fn transform(&self, frame: &mut frame::LeapFrame) -> frame::Result<()> {
@@ -95,9 +97,9 @@ impl Op for StringIndexerOp {
   fn load_model(&self,
                 model: &dsl::Model,
                 _ctx: &Context<Self::Node>) -> Result<Box<Any>> {
-    model.get_string_vector("labels").and_then(|labels| {
-      Some(StringIndexerModel::new(labels.to_vec()))
-    }).map(|x| Ok(Box::new(x) as Box<Any>)).unwrap_or_else(|| Err(Error::InvalidModel("".to_string())))
+    model.get_string_vector("labels").map(|labels| {
+      Box::new(StringIndexerModel::new(labels.to_vec())) as Box<Any>
+    }).map(|x| Ok(x)).unwrap_or_else(|| Err(Error::InvalidModel("".to_string())))
   }
 
   fn node(&self, node: &Self::Node, _ctx: &Context<Self::Node>) -> dsl::Node {

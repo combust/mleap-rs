@@ -27,7 +27,9 @@ impl LinearRegressionModel {
     dot + self.intercept
   }
 }
-impl OpNode for LinearRegression { }
+impl OpNode for LinearRegression {
+  fn op(&self) -> &'static str { "linear_regression" }
+}
 
 impl frame::Transformer for LinearRegression {
   fn transform(&self, frame: &mut frame::LeapFrame) -> frame::Result<()> {
@@ -77,12 +79,12 @@ impl Op for LinearRegressionOp {
                 _ctx: &Context<Self::Node>) -> Result<Box<Any>> {
     model.get_double("intercept").and_then(|i| {
       model.get_double_tensor("coefficients").map(|c| {
-        Some(LinearRegressionModel {
+        LinearRegressionModel {
           intercept: i,
           coefficients: c.clone()
-        })
+        }
       })
-    }).map(|x| Ok(Box::new(x) as Box<Any>)).unwrap_or_else(|| Err(Error::InvalidModel("".to_string())))
+    }).map(|x| Ok(Box::new(x) as Box<Any>)).unwrap_or_else(|| Err(Error::InvalidModel("Invalid LinearRegressionModel".to_string())))
   }
 
   fn node(&self, node: &Self::Node, _ctx: &Context<Self::Node>) -> dsl::Node {
@@ -103,7 +105,7 @@ impl Op for LinearRegressionOp {
           prediction_col: o.name().to_string(),
           model: *lr
         }) as Box<DefaultNode>)
-      }).unwrap_or_else(|| Err(Error::InvalidOp(String::from(""))))
+      }).unwrap_or_else(|| Err(Error::InvalidOp(String::from("Error loading LinearRegression"))))
     })
   }
 }

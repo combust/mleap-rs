@@ -22,4 +22,5 @@ pub trait DefaultNode: OpNode + frame::Transformer {
 
 impl OpNode for Box<DefaultNode> {
   fn type_id(&self) -> TypeId { DefaultNode::type_id(self.as_ref()) }
+  fn op(&self) -> &'static str { DefaultNode::op(self.as_ref()) }
 }

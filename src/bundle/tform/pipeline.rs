@@ -18,7 +18,9 @@ pub struct Pipeline {
 
 pub struct PipelineOp { }
 
-impl OpNode for Pipeline { }
+impl OpNode for Pipeline {
+  fn op(&self) -> &'static str { "pipeline" }
+}
 
 impl frame::Transformer for Pipeline {
   fn transform(&self, frame: &mut frame::LeapFrame) -> frame::Result<()> {
@@ -69,7 +71,7 @@ impl Op for PipelineOp {
         }
       }
 
-      model.with_attr("children", dsl::Attribute::Array(dsl::VectorValue::String(names)));
+      model.with_attr("nodes", dsl::Attribute::Array(dsl::VectorValue::String(names)));
       Ok(())
     }).unwrap_or_else(|| Err(Error::InvalidOp("Expected a PipelineModel".to_string())))
   }
@@ -77,7 +79,7 @@ impl Op for PipelineOp {
   fn load_model(&self,
                 model: &dsl::Model,
                 ctx: &Context<Self::Node>) -> Result<Box<Any>> {
-    model.get_string_vector("children").map(|children| {
+    model.get_string_vector("nodes").map(|children| {
       let mut c_nodes: Vec<Box<DefaultNode>> = Vec::with_capacity(children.len());
 
       for name in children.iter() {
@@ -94,7 +96,7 @@ impl Op for PipelineOp {
         children: c_nodes
       });
       Ok(pm as Box<Any>)
-    }).unwrap_or_else(|| Err(Error::InvalidModel(String::from(""))))
+    }).unwrap_or_else(|| Err(Error::InvalidModel(String::from("Invalid pipeline, no children"))))
   }
 
   fn node(&self, node: &Self::Node, _ctx: &Context<Self::Node>) -> dsl::Node {

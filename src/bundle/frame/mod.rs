@@ -3,6 +3,7 @@ use std::collections::HashMap;
 
 use bundle::dsl::DenseTensor;
 
+#[derive(Debug)]
 pub enum Error {
   TransformError(String),
   InvalidType(String),
@@ -160,12 +161,12 @@ impl LeapFrame {
 
   pub fn try_with_col(&mut self, col: Col) -> Result<&mut Self> {
     if self.col_indices_by_name.contains_key(col.name()) {
+      Err(Error::ColumnAlreadyExists(String::from(col.name())))
+    } else {
       self.col_indices_by_name.insert(col.name().to_string(), self.cols.len());
       self.cols.push(col);
 
       Ok(self)
-    } else {
-      Err(Error::ColumnAlreadyExists(String::from(col.name())))
     }
   }
 

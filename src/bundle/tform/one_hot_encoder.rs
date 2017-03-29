@@ -20,7 +20,9 @@ pub struct OneHotEncoder {
 
 pub struct OneHotEncoderOp { }
 
-impl OpNode for OneHotEncoder { }
+impl OpNode for OneHotEncoder {
+  fn op(&self) -> &'static str { "one_hot_encoder" }
+}
 
 impl OneHotEncoderModel {
   pub fn try_encode_col_data(&self, data: &frame::ColData) -> frame::Result<frame::ColData> {
@@ -95,11 +97,11 @@ impl Op for OneHotEncoderOp {
   fn load_model(&self,
                 model: &dsl::Model,
                 _ctx: &Context<Self::Node>) -> Result<Box<Any>> {
-    model.get_long("size").and_then(|i| {
-      Some(OneHotEncoderModel {
+    model.get_long("size").map(|i| {
+      Box::new(OneHotEncoderModel {
         size: i as usize,
-      })
-    }).map(|x| Ok(Box::new(x) as Box<Any>)).unwrap_or_else(|| Err(Error::InvalidModel("".to_string())))
+      }) as Box<Any>
+    }).map(|x| Ok(x)).unwrap_or_else(|| Err(Error::InvalidModel("Expected size long".to_string())))
   }
 
   fn node(&self, node: &Self::Node, _ctx: &Context<Self::Node>) -> dsl::Node {
@@ -120,7 +122,7 @@ impl Op for OneHotEncoderOp {
           output_col: o.name().to_string(),
           model: *oh
         }) as Box<DefaultNode>)
-      }).unwrap_or_else(|| Err(Error::InvalidOp(String::from(""))))
+      }).unwrap_or_else(|| Err(Error::InvalidOp(String::from("Error loading OneHotEncoder"))))
     })
   }
 }
