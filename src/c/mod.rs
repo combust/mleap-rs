@@ -2,14 +2,14 @@ use bundle::*;
 use libc;
 use std::slice;
 
-pub extern fn mleap_frame_with_size(size: usize) -> *mut frame::LeapFrame {
-  let f = Box::new(frame::LeapFrame::with_size(size));
+pub extern fn mleap_frame_with_size(c_size: usize) -> *mut frame::LeapFrame {
+  let f = Box::new(frame::LeapFrame::with_size(c_size));
   Box::into_raw(f)
 }
 
-pub extern fn mleap_frame_free(frame: *mut frame::LeapFrame) {
+pub extern fn mleap_frame_free(c_frame: *mut frame::LeapFrame) {
   unsafe {
-    drop(Box::from_raw(frame))
+    drop(Box::from_raw(c_frame))
   }
 }
 
@@ -35,5 +35,41 @@ pub extern fn mleap_frame_with_strings(c_frame: *mut frame::LeapFrame,
       String::from_utf8_unchecked(slice::from_raw_parts(*s, len).clone().to_vec())
     }).collect();
     frame.try_with_strings(name, values).unwrap();
+  }
+}
+
+pub extern fn mleap_transformer_load(c_path: *const u8) -> *mut Box<tform::DefaultNode> {
+  unsafe {
+    let path = String::from_utf8_unchecked(slice::from_raw_parts(c_path, libc::strlen(c_path as *const i8)).clone().to_vec());
+    let builder = ser::FileBuilder::try_new(path).unwrap();
+    let mut registry = ser::Registry::new();
+
+    registry.insert_op(tform::linear_regression::OP);
+    registry.insert_op(tform::string_indexer::OP);
+    registry.insert_op(tform::one_hot_encoder::OP);
+    registry.insert_op(tform::pipeline::OP);
+    registry.insert_op(tform::vector_assembler::OP);
+    registry.insert_op(tform::standard_scaler::OP);
+
+    let ctx = ser::Context::new(Box::new(builder), &registry);
+    let (_, transformer) = ctx.read_bundle().unwrap();
+    let r = Box::new(transformer);
+    Box::into_raw(r)
+  }
+}
+
+pub extern fn mleap_transformer_free(c_transformer: *mut Box<tform::DefaultNode>) {
+  unsafe {
+    drop(Box::from_raw(c_transformer))
+  }
+}
+
+pub extern fn mleap_transform(c_transformer: *mut Box<tform::DefaultNode>,
+                              c_frame: *mut frame::LeapFrame) {
+  unsafe {
+    let transformer = Box::from_raw(c_transformer);
+    let mut frame = Box::from_raw(c_frame);
+
+    transformer.transform(&mut frame).unwrap();
   }
 }
