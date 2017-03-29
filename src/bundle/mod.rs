@@ -113,10 +113,12 @@ mod test {
 
     c::mleap_transform(c_transformer, c_frame);
 
-    let frame = unsafe { c_frame.as_mut().unwrap() };
-    let r = frame.get_doubles("price_prediction").and_then(|x| x.first()).unwrap();
+    let mut buffer: [f64; 1] = [0.0];
+    let price_prediction = ffi::CString::new("price_prediction").unwrap();
+    c::mleap_frame_get_doubles(c_frame, price_prediction.as_ptr(), buffer.as_mut_ptr());
+    let r = buffer[0];
 
-    assert_eq!(*r, 236.76099900182078);
+    assert_eq!(r, 236.76099900182078);
 
     c::mleap_transformer_free(c_transformer);
     c::mleap_frame_free(c_frame);

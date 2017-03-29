@@ -1,6 +1,7 @@
 use bundle::*;
 use std::slice;
 use std::ffi;
+use std::ptr;
 use std::os::raw::c_char;
 
 #[no_mangle]
@@ -39,6 +40,18 @@ pub extern fn mleap_frame_with_strings(c_frame: *mut frame::LeapFrame,
       c_string_to_rust(*s)
     }).collect();
     frame.try_with_strings(name, values).unwrap();
+  }
+}
+
+#[no_mangle]
+pub extern fn mleap_frame_get_doubles(c_frame: *mut frame::LeapFrame,
+                                      c_name: *const i8,
+                                      c_buffer: *mut f64) {
+  unsafe {
+    let frame = c_frame.as_mut().unwrap();
+    let name = c_string_to_rust(c_name);
+    let values = frame.get_doubles(&name).unwrap();
+    ptr::copy_nonoverlapping(values.as_ptr(), c_buffer, values.len());
   }
 }
 
