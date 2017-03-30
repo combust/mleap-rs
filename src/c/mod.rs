@@ -76,7 +76,10 @@ pub extern fn mleap_transformer_load(c_path: *const i8) -> *mut Box<tform::Defau
 }
 
 #[no_mangle]
-pub extern fn mleap_transformer_load_ex(c_path: *const i8, c_transform: tform::external::Transform) -> *mut Box<tform::DefaultNode> {
+pub extern fn mleap_transformer_load_ex(c_path: *const i8,
+                                        c_load_model: tform::external::LoadModel,
+                                        c_transform: tform::external::Transform)
+                                        -> *mut Box<tform::DefaultNode> {
     let path = c_string_to_rust(c_path);
     let builder = ser::FileBuilder::try_new(path).unwrap();
     let mut registry: ser::Registry<Box<tform::DefaultNode>> = ser::Registry::new();
@@ -89,7 +92,7 @@ pub extern fn mleap_transformer_load_ex(c_path: *const i8, c_transform: tform::e
     registry.insert_op(tform::standard_scaler::OP);
     // UNSAFE: modifying the singleton
     unsafe {
-      tform::external::OP = tform::external::ExternalOp { transform: c_transform };
+      tform::external::OP = tform::external::ExternalOp::new(c_load_model, c_transform);
       registry.insert_op(&tform::external::OP);
     }
 
@@ -115,6 +118,44 @@ pub extern fn mleap_transform(c_transformer: *mut Box<tform::DefaultNode>,
     let frame = c_frame.as_mut().unwrap();
 
     transformer.transform(frame).unwrap();
+  }
+}
+
+#[no_mangle]
+pub extern fn mleap_model_get_double(c_model: *const dsl::Model, c_name: *const i8) -> f64 {
+  unsafe {
+    let model = c_model.as_ref().unwrap();
+    let name = ffi::CStr::from_ptr(c_name).to_str().unwrap();
+    model.get_double(name).unwrap()
+  }
+}
+
+#[no_mangle]
+pub extern fn mleap_model_get_double_tensor_len(c_model: *const dsl::Model,
+                                                c_name: *const i8,
+                                                c_dimensions_len: *mut usize,
+                                                c_values_len: *mut usize) {
+  unsafe {
+    let model = c_model.as_ref().unwrap();
+    let name = ffi::CStr::from_ptr(c_name).to_str().unwrap();
+    let tensor = model.get_double_tensor(name).unwrap();
+    *c_dimensions_len = tensor.dimensions().len();
+    *c_values_len = tensor.values().len();
+  }
+}
+
+#[no_mangle]
+pub extern fn mleap_model_get_double_tensor(c_model: *const dsl::Model,
+                                            c_name: *const i8,
+                                            c_dimensions: *mut usize,
+                                            c_values: *mut f64)
+{
+  unsafe {
+    let model = c_model.as_ref().unwrap();
+    let name = ffi::CStr::from_ptr(c_name).to_str().unwrap();
+    let tensor = model.get_double_tensor(name).unwrap();
+    ptr::copy_nonoverlapping(tensor.dimensions().as_ptr(), c_dimensions, tensor.dimensions().len());
+    ptr::copy_nonoverlapping(tensor.values().as_ptr(), c_values, tensor.values().len());
   }
 }
 

@@ -8,18 +8,24 @@ use bundle::dsl;
 
 use libc;
 
-pub type Transform = extern fn(*mut frame::LeapFrame);
+pub type LoadModel = extern fn(*const dsl::Model) -> *const libc::c_void;
+pub type Transform = extern fn(*mut frame::LeapFrame, *const libc::c_void);
 
-extern "C" fn dummy(frame: *mut frame::LeapFrame) {
-    panic!("dummy transform has been called");
+extern "C" fn dummy_load_model(model: *const dsl::Model) -> *const libc::c_void {
+  panic!("dummy load model has been called");
+}
+
+extern "C" fn dummy_transform(frame: *mut frame::LeapFrame, model: *const libc::c_void) {
+  panic!("dummy transform has been called");
 }
 
 pub static mut OP: ExternalOp = ExternalOp {
-    transform: dummy
+  load_model: dummy_load_model,
+  transform: dummy_transform
 };
 
 pub struct ExternalModel {
-    data: *const libc::c_void
+  data: *const libc::c_void
 }
 
 pub struct External {
@@ -31,7 +37,17 @@ pub struct External {
 }
 
 pub struct ExternalOp {
-    pub transform: Transform
+  load_model: LoadModel,
+  transform: Transform
+}
+
+impl ExternalOp {
+  pub fn new(load_model: LoadModel, transform: Transform) -> ExternalOp {
+    ExternalOp {
+      load_model: load_model,
+      transform: transform
+    }
+  }
 }
 
 impl OpNode for External {
@@ -40,7 +56,7 @@ impl OpNode for External {
 
 impl frame::Transformer for External {
   fn transform(&self, frame: &mut frame::LeapFrame) -> frame::Result<()> {
-    (self.ext_transform)(frame as *mut frame::LeapFrame);
+    (self.ext_transform)(frame as *mut frame::LeapFrame, self.model.data);
     Ok(())
   }
 }
@@ -69,14 +85,14 @@ impl Op for ExternalOp {
                  obj: &Any,
                  model: &mut dsl::Model,
                  _ctx: &Context<Self::Node>) -> Result<()> {
-    Ok(())
+    Err(Error::InvalidOp(String::from("FIXME: Cannot store external model")))
   }
 
   fn load_model(&self,
                 model: &dsl::Model,
                 _ctx: &Context<Self::Node>) -> Result<Box<Any>> {
     Ok(Box::new(ExternalModel {
-      data: ptr::null()
+      data: (self.load_model)(model as *const dsl::Model)
     }) as Box<Any>)
   }
 
