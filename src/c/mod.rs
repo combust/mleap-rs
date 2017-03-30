@@ -76,6 +76,31 @@ pub extern fn mleap_transformer_load(c_path: *const i8) -> *mut Box<tform::Defau
 }
 
 #[no_mangle]
+pub extern fn mleap_transformer_load_ex(c_path: *const i8, c_transform: tform::external::Transform) -> *mut Box<tform::DefaultNode> {
+    let path = c_string_to_rust(c_path);
+    let builder = ser::FileBuilder::try_new(path).unwrap();
+    let mut registry: ser::Registry<Box<tform::DefaultNode>> = ser::Registry::new();
+
+    registry.insert_op(tform::linear_regression::OP);
+    registry.insert_op(tform::string_indexer::OP);
+    registry.insert_op(tform::one_hot_encoder::OP);
+    registry.insert_op(tform::pipeline::OP);
+    registry.insert_op(tform::vector_assembler::OP);
+    registry.insert_op(tform::standard_scaler::OP);
+    // UNSAFE: modifying the singleton
+    unsafe {
+      tform::external::OP = tform::external::ExternalOp { transform: c_transform };
+      registry.insert_op(&tform::external::OP);
+    }
+
+    let ctx = ser::Context::new(Box::new(builder), &registry);
+
+    let (_, transformer) = ctx.read_bundle().unwrap();
+    let r = Box::new(transformer);
+    Box::into_raw(r)
+}
+
+#[no_mangle]
 pub extern fn mleap_transformer_free(c_transformer: *mut Box<tform::DefaultNode>) {
   unsafe {
     drop(Box::from_raw(c_transformer))

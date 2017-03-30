@@ -4,6 +4,7 @@ pub mod vector_assembler;
 pub mod one_hot_encoder;
 pub mod standard_scaler;
 pub mod pipeline;
+pub mod external;
 
 use std::any::{Any, TypeId};
 
