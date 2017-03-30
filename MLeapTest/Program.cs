@@ -28,6 +28,9 @@ namespace MLeapTest
                     NativeMethods.mleap_frame_with_strings(frame, "state", new[] { "NY" });
 
                     NativeMethods.mleap_transform(transformer, frame);
+
+                    var result = new double[1];
+                    NativeMethods.mleap_frame_get_doubles(frame, "price_prediction", result);
                 }
                 finally
                 {

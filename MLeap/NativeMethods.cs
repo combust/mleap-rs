@@ -20,10 +20,13 @@ namespace MLeap
         [DllImport("mleap-rs", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern IntPtr mleap_transformer_load(string c_path);
 
-        [DllImport("mleap-rs", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport("mleap-rs", CallingConvention = CallingConvention.Cdecl)]
         public static extern void mleap_transformer_free(IntPtr c_transformer);
 
-        [DllImport("mleap-rs", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport("mleap-rs", CallingConvention = CallingConvention.Cdecl)]
         public static extern void mleap_transform(IntPtr c_transformer, IntPtr c_frame);
+
+        [DllImport("mleap-rs", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern void mleap_frame_get_doubles(IntPtr c_frame, string c_name, double[] c_buffer);
     }
 }
