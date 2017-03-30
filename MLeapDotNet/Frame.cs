@@ -16,6 +16,8 @@ namespace MLeapDotNet
 
         internal IntPtr NativePointer => _frame;
 
+        public int RowsCount => _rowsCount;
+
         public void AddDoubles(string name, params double[] values)
         {
             if (values.Length != _rowsCount)

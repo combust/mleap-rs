@@ -5,6 +5,9 @@ namespace MLeapDotNet
 {
     public static class NativeMethods
     {
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void TransformDelegate(IntPtr c_frame);
+
         [DllImport("mleap", CallingConvention = CallingConvention.Cdecl)]
         public static extern IntPtr mleap_frame_with_size(uint c_size);
 
@@ -19,6 +22,9 @@ namespace MLeapDotNet
 
         [DllImport("mleap", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         public static extern IntPtr mleap_transformer_load(string c_path);
+
+        [DllImport("mleap", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        public static extern IntPtr mleap_transformer_load_ex(string c_path, TransformDelegate c_transform);
 
         [DllImport("mleap", CallingConvention = CallingConvention.Cdecl)]
         public static extern void mleap_transformer_free(IntPtr c_transformer);

@@ -7,7 +7,12 @@ namespace MLeapTest
     {
         static void Main(string[] args)
         {
-            using (var transformer = Transformer.LoadFrom("transformer.mleap"))
+            // NOTE: to use the non-extended API, remove the frame transform callback 
+            using (var transformer = Transformer.LoadFrom("transformer.mleap",
+                f =>
+                {
+                    f.AddDoubles("price_prediction", new double[f.RowsCount]);
+                }))
             using (var frame = new Frame(2))
             {
                 frame.AddDoubles("bathrooms", 2.0, 1.0);
