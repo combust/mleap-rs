@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLeapTest", "MLeapTest\MLeapTest.csproj", "{BA5B812C-23A7-4A2E-A0E5-CA57E2BF7B36}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLeap", "MLeap\MLeap.csproj", "{7CD26A01-FDDF-4643-BDD3-00686A5679C3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MLeapDotNet", "MLeapDotNet\MLeapDotNet.csproj", "{7CD26A01-FDDF-4643-BDD3-00686A5679C3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

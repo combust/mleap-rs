@@ -7,8 +7,8 @@
     <ProjectGuid>{7CD26A01-FDDF-4643-BDD3-00686A5679C3}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>MLeap</RootNamespace>
-    <AssemblyName>MLeap</AssemblyName>
+    <RootNamespace>MLeapDotNet</RootNamespace>
+    <AssemblyName>MLeapDotNet</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>

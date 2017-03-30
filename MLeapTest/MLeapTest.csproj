@@ -51,14 +51,14 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\MLeap\MLeap.csproj">
+    <ProjectReference Include="..\MLeapDotNet\MLeapDotNet.csproj">
       <Project>{7cd26a01-fddf-4643-bdd3-00686a5679c3}</Project>
       <Name>MLeap</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PreBuildEvent>copy c:\work\mleap-rs\target\debug\mleap.dll $(TargetDir)mleap-rs.dll</PreBuildEvent>
+    <PreBuildEvent>copy c:\work\mleap-rs\target\debug\mleap.dll $(TargetDir)mleap.dll</PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

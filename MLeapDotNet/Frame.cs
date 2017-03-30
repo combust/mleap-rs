@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace MLeap
+namespace MLeapDotNet
 {
     public class Frame : IDisposable
     {
