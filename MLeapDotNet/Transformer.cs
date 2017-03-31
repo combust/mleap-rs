@@ -3,28 +3,40 @@ using System.Collections.Generic;
 
 namespace MLeapDotNet
 {
-    public class Transformer : IDisposable
+    public class Transformer
     {
+        public static Transformer<TModel> LoadFrom<TModel>(string modelDirectoryPath, Func<Model, TModel> loadModel,
+            Action<Frame, TModel> transform)
+        {
+            return new Transformer<TModel>(modelDirectoryPath, loadModel, transform);
+        }
+    }
+
+    public class Transformer<TModel> : IDisposable
+    {
+        private readonly TModel _model;
         private readonly IntPtr _transformer;
         private readonly Dictionary<IntPtr, Frame> _currentFrames = new Dictionary<IntPtr, Frame>(); // not thread safe
         private bool _isDisposed;
 
-        private Transformer(string modelDirectoryPath, Action<Frame> transform)
+        internal Transformer(string modelDirectoryPath, Func<Model, TModel> loadModel, Action<Frame, TModel> transform)
         {
+            var model = default(TModel);
             _transformer = transform == null
                 ? NativeMethods.mleap_transformer_load(modelDirectoryPath)
                 : NativeMethods.mleap_transformer_load_ex(modelDirectoryPath,
-                    f => transform(_currentFrames[f]));
+                    m =>
+                    {
+                        model = loadModel(new Model(m));
+                        return IntPtr.Zero;
+                    },
+                    (f, m) => transform(_currentFrames[f], _model));
+            _model = model;
         }
 
-        public static Transformer LoadFrom(string modelDirectoryPath)
+        public static Transformer<bool> LoadFrom(string modelDirectoryPath)
         {
-            return new Transformer(modelDirectoryPath, null);
-        }
-
-        public static Transformer LoadFrom(string modelDirectoryPath, Action<Frame> transform)
-        {
-            return new Transformer(modelDirectoryPath, transform);
+            return new Transformer<bool>(modelDirectoryPath, null, null);
         }
 
         public void Transfrom(Frame frame)

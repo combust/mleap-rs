@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace MLeapDotNet
 {
@@ -11,7 +12,7 @@ namespace MLeapDotNet
         public Frame(int rowsCount)
         {
             _rowsCount = rowsCount;
-            _frame = NativeMethods.mleap_frame_with_size((uint) _rowsCount);
+            _frame = NativeMethods.mleap_frame_with_size((UIntPtr) _rowsCount);
         }
 
         internal IntPtr NativePointer => _frame;
@@ -41,6 +42,21 @@ namespace MLeapDotNet
             var result = new double[_rowsCount];
             NativeMethods.mleap_frame_get_doubles(_frame, name, result);
             return result;
+        }
+
+        public IEnumerable<DoubleTensor> GetTensors(string name)
+        {
+            for (int i = 0; i < _rowsCount; i++)
+            {
+                UIntPtr dimensionsLength;
+                UIntPtr valuesLength;
+                NativeMethods.mleap_frame_get_double_tensor_len(_frame, name, (UIntPtr) i, out dimensionsLength,
+                    out valuesLength);
+                var dimensions = new UIntPtr[(ulong) dimensionsLength];
+                var values = new double[(ulong) valuesLength];
+                NativeMethods.mleap_frame_get_double_tensor(_frame, name, (UIntPtr) i, dimensions, values);
+                yield return new DoubleTensor(new UIntPtrArrayAdapter(dimensions), values);
+            }
         }
 
         ~Frame()

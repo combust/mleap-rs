@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using MLeapDotNet;
 
 namespace MLeapTest
@@ -9,9 +10,26 @@ namespace MLeapTest
         {
             // NOTE: to use the non-extended API, remove the frame transform callback 
             using (var transformer = Transformer.LoadFrom("transformer.mleap",
-                f =>
+                m =>
                 {
-                    f.AddDoubles("price_prediction", new double[f.RowsCount]);
+                    var intercept = m.GetDouble("intercept");
+                    var coefficients = m.GetDoubleTensor("coefficients");
+                    return new
+                    {
+                        Intercept = intercept,
+                        Coefficients = coefficients,
+                    };
+                },
+                (f, m) =>
+                {
+                    var result = f.GetTensors("features")
+                        .Select(t =>
+                        {
+                            var dot = t.Values.Zip(m.Coefficients.Values, (a, b) => a * b).Sum();
+                            return dot + m.Intercept;
+                        })
+                        .ToArray();
+                    f.AddDoubles("price_prediction", result);
                 }))
             using (var frame = new Frame(2))
             {
