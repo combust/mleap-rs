@@ -56,6 +56,38 @@ pub extern fn mleap_frame_get_doubles(c_frame: *mut frame::LeapFrame,
 }
 
 #[no_mangle]
+pub extern fn mleap_frame_get_double_tensor_len(c_frame: *mut frame::LeapFrame,
+                                                c_name: *const i8,
+                                                c_index: usize,
+                                                c_dimensions_len: *mut usize,
+                                                c_values_len: *mut usize)
+{
+  unsafe {
+    let frame = c_frame.as_mut().unwrap();
+    let name = c_string_to_rust(c_name);
+    let tensor = &frame.get_double_tensors(&name).unwrap()[c_index];
+    *c_dimensions_len = tensor.dimensions().len();
+    *c_values_len = tensor.values().len();
+  }
+}
+
+#[no_mangle]
+pub extern fn mleap_frame_get_double_tensor(c_frame: *mut frame::LeapFrame,
+                                            c_name: *const i8,
+                                            c_index: usize,
+                                            c_dimensions: *mut usize,
+                                            c_values: *mut f64)
+{
+  unsafe {
+    let frame = c_frame.as_mut().unwrap();
+    let name = c_string_to_rust(c_name);
+    let tensor = &frame.get_double_tensors(&name).unwrap()[c_index];
+    ptr::copy_nonoverlapping(tensor.dimensions().as_ptr(), c_dimensions, tensor.dimensions().len());
+    ptr::copy_nonoverlapping(tensor.values().as_ptr(), c_values, tensor.values().len());
+  }
+}
+
+#[no_mangle]
 pub extern fn mleap_transformer_load(c_path: *const i8) -> *mut Box<tform::DefaultNode> {
   let path = c_string_to_rust(c_path);
   let builder = ser::FileBuilder::try_new(path).unwrap();
