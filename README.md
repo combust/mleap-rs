@@ -76,3 +76,32 @@ these two corresponding methods:
 2. `mleap_transformer_free` to free a Transformer
 
 Forgetting to free resources will cause a memory leak.
+
+## .Net bindings
+
+The `bindings/csharp` directory provide a prototype of .Net bindings
+for MLeap, via its C interfaces.
+
+NB: The project files (`.csproj`, `.sln`) with a `.NetCore` suffix
+target the .Net Core platform whereas the ones without target the
+Microsoft Windows CLR.
+
+### How to build for .NetCore
+
+CAUTION this was only tried on one local machine - adapt to you own system.
+
+1. Ensure you have installed .Net Core
+   `$ dotnet --version`
+2. Restore (or initialize) the .Net Core store
+   `bindings/csharp $ dotnet restore MLeap.NetCore.sln`
+3. Build the .Net package
+   `bindings/csharp $ dotnet pack MLeap.NetCore.sln`
+4. Make the MLeap-RS native library findable by the test
+   `bindings/csharp $ ln -s ../../target/debug/libmleap.dylib .
+
+Please remind to copy the MLeap-RS native library to a location where
+it can be found at runtime (current directory for the MLeapTest
+example, somewhere on your LD_LIBRARY_PATH, ...).
+
+
+   
